@@ -126,25 +126,6 @@ pub fn main() !void {
         .gear = null,
     };
 
-    //var commands = std.StringHashMap(*const fn (anytype) void).init(std.heap.page_allocator);
-    //try commands.put("help", Cmd.help);
-    //try commands.put("h", Cmd.help);
-    //try commands.put("examine", Cmd.examine);
-    //try commands.put("x", Cmd.examine);
-    //try commands.put("look", Cmd.look);
-    //try commands.put("l", Cmd.look);
-    //try commands.put("take", Cmd.take);
-    //try commands.put("drop", Cmd.drop);
-    //try commands.put("open", Cmd.open);
-    //try commands.put("put", Cmd.put);
-    //try commands.put("push", Cmd.push);
-    //try commands.put("pull", Cmd.pull);
-    //try commands.put("turn", Cmd.turn);
-    //try commands.put("feel", Cmd.feel);
-    //try commands.put("eat", Cmd.eat);
-    //try commands.put("unknown", Cmd.unknown);
-    //try commands.put("go", Cmd.go);
-
     // Print the current room's description
     try stdout.print("{s}\n", .{map.rooms[p_state.room].description});
 
@@ -183,7 +164,10 @@ pub fn main() !void {
                 if (std.mem.eql(u8, first_word.?, "help")) Cmd.help();
                 if (std.mem.eql(u8, first_word.?, "h")) Cmd.help();
                 // TODO: Error occurs when command function has 2 args, but 2nd command wasn't supplied in prompt.
-                if (std.mem.eql(u8, first_word.?, "examine")) Cmd.examine(second_word.?);
+                // Need some error handling. Pass in a default string such as "nothing" if no 2nd word supplied.
+                if (std.mem.eql(u8, first_word.?, "examine")) {
+                    Cmd.examine(second_word.?);
+                }
                 if (std.mem.eql(u8, first_word.?, "x")) Cmd.examine(second_word.?);
                 if (std.mem.eql(u8, first_word.?, "look")) Cmd.look();
                 if (std.mem.eql(u8, first_word.?, "l")) Cmd.look();
