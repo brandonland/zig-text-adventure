@@ -1,4 +1,5 @@
 const std = @import("std");
+const map = @import("map");
 
 const Player = struct {
     name: []const u8,
@@ -18,29 +19,6 @@ const StatusEffect = struct {
     name: []const u8, // printable name
 };
 
-// Tuple
-//const direction = .{
-//    "north",
-//    "east",
-//    "south",
-//    "west",
-//    "up",
-//    "down",
-//};
-
-const Room = struct {
-    name: []const u8,
-    description: []const u8,
-    items: ?[]u16, // array of items in the room
-    //exits: []u8,
-    north: ?usize,
-    east: ?usize,
-    south: ?usize,
-    west: ?usize,
-    up: ?usize,
-    down: ?usize,
-};
-
 const Item = struct {
     key: []const u8, // key name (for retrieval)
     name: []const u8, // Printable name
@@ -54,77 +32,6 @@ const Item = struct {
         currency,
     },
 };
-
-const rooms = [_]Room{
-    Room{ // 0
-        .name = "start",
-        .description = "This is your bedroom. You keep forgetting to clean it...",
-        .items = null,
-        .north = null,
-        .south = 1,
-        .east = null,
-        .west = null,
-        .up = null,
-        .down = null,
-    },
-    Room{ // 1
-        .name = "apartment_living_room",
-        .description = "This is your apartment living room.",
-        .items = null,
-        .north = null,
-        .east = 2,
-        .south = 3,
-        .west = null,
-        .up = null,
-        .down = null,
-    },
-    Room{ // 2
-        .name = "bathroom",
-        .description = "A cute little bathroom.",
-        .items = null,
-        .north = null,
-        .east = null,
-        .south = null,
-        .west = 1, // connected to living room
-        .up = null,
-        .down = null,
-    },
-    Room{ // 3
-        .name = "your_apartment_entrance",
-        .description = "Just outside of your apartment building.",
-        .items = null,
-        .north = 1,
-        .east = null,
-        .south = 4,
-        .west = null,
-        .up = null,
-        .down = null,
-    },
-    Room{ // 4
-        .name = "the_end",
-        .description = "You made it!",
-        .items = null,
-        .north = null,
-        .east = null,
-        .south = 1,
-        .west = null,
-        .up = null,
-        .down = null,
-    },
-};
-
-//fn getAction(room: *Room) ?*Room {
-//    var action: []const u8 = undefined;
-//    while (true) : (action = std.io.readLine(allocator).strip()) {
-//        switch (action) {
-//
-//            else => std.debug.print("Invalid action. Try again.\n")
-//        }
-//    }
-//    return null;
-//}
-//
-//
 
 // Commands:
 //
@@ -159,9 +66,6 @@ pub fn main() !void {
     var bw = std.io.bufferedWriter(stdout_file);
     const stdout = bw.writer();
 
-    // const player = Player{ .name = "Hero", .description = "You are a mystery." };
-    // _ = player;
-
     // Initialize player state
     var p_state: PlayerState = PlayerState{
         .hp = 100,
@@ -176,14 +80,12 @@ pub fn main() !void {
     _ = commands;
 
     // Print the current room's description
-    try stdout.print("{s}\n", .{rooms[p_state.room].description});
-
-    //
+    try stdout.print("{s}\n", .{map.rooms[p_state.room].description});
 
     while (true) {
         // If you've reached the end, you won
-        if (std.mem.eql(u8, rooms[p_state.room].name, "the_end")) {
-            try stdout.print("{s}\n", .{rooms[p_state.room].description});
+        if (std.mem.eql(u8, map.rooms[p_state.room].name, "the_end")) {
+            try stdout.print("{s}\n", .{map.rooms[p_state.room].description});
             break;
         }
 
@@ -204,10 +106,3 @@ pub fn main() !void {
         std.debug.print("input is {s}\n", .{input_line});
     }
 }
-
-//test "simple test" {
-//    var list = std.ArrayList(i32).init(std.testing.allocator);
-//    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-//    try list.append(42);
-//    try std.testing.expectEqual(@as(i32, 42), list.pop());
-//}
