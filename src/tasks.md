@@ -1,4 +1,0 @@
-- [ ] Create data structure for rooms
-- [ ] Create data structure for items
-- [ ] Create data structure for characters
-- [ ] Create player struct to represent state
