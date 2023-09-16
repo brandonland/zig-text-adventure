@@ -1,6 +1,9 @@
 const std = @import("std");
 const map = @import("map.zig");
 
+const print = std.debug.print;
+const eql = std.mem.eql;
+
 const Player = struct {
     name: []const u8,
     description: []const u8,
@@ -40,68 +43,68 @@ fn isItem() bool {
 
 const Cmd = struct {
     fn help() void {
-        std.debug.print("Help menu\n", .{});
+        print("Help menu\n", .{});
     }
 
     fn go(direction: []const u8) void {
-        std.debug.print("You go {s}\n", .{direction});
+        print("You go {s}\n", .{direction});
     }
 
     fn examine(object: []const u8) void {
-        std.debug.print("You examine {s}\n", .{object});
+        print("You examine {s}\n", .{object});
     }
 
     fn look() void {
         // This function depends on the location of the player.
-        std.debug.print("You look around.\n", .{});
+        print("You look around.\n", .{});
     }
 
     fn take(item: []const u8) void {
         // Need logic here to determine if the object can be taken.
         // Is the object actually an item?
         //if (!item.isItem()) {
-        //    std.debug.print("This object cannot be taken.", .{});
+        //    print("This object cannot be taken.", .{});
         //}
-        std.debug.print("You take {s}\n", .{item});
+        print("You take {s}\n", .{item});
     }
 
     fn drop() void {
-        std.debug.print("You drop it like it's hot\n", .{});
+        print("You drop it like it's hot\n", .{});
     }
 
     fn open() void {
-        std.debug.print("You open it.\n", .{});
+        print("You open it.\n", .{});
     }
 
     fn put(object: anytype) void {
         // TODO: Implement "put it in" vs "put it on"
         _ = object;
 
-        std.debug.print("You put it somewhere.\n", .{});
+        print("You put it somewhere.\n", .{});
     }
 
     fn push() void {
-        std.debug.print("You push it.\n", .{});
+        print("You push it.\n", .{});
     }
 
     fn pull() void {
-        std.debug.print("You pull it.\n", .{});
+        print("You pull it.\n", .{});
     }
 
     fn turn() void {
-        std.debug.print("You turn it.\n", .{});
+        print("You turn it.\n", .{});
     }
 
     fn feel() void {
-        std.debug.print("You feel it.\n", .{});
+        print("You feel it.\n", .{});
     }
 
     fn eat() void {
-        std.debug.print("You eat it.\n", .{});
+        print("You eat it.\n", .{});
     }
 
     fn unknown() void {
-        std.debug.print("Unknown command. Try again.\n", .{});
+        print("Unknown command. Try again.\n", .{});
     }
 };
 
@@ -131,7 +134,7 @@ pub fn main() !void {
 
     while (true) {
         // If you've reached the end, you won
-        if (std.mem.eql(u8, map.rooms[p_state.room].name, "the_end")) {
+        if (eql(u8, map.rooms[p_state.room].name, "the_end")) {
             try stdout.print("{s}\n", .{map.rooms[p_state.room].description});
             break;
         }
@@ -151,36 +154,35 @@ pub fn main() !void {
             return;
         };
 
-        // Collect the first word of the command,
         var it = std.mem.split(u8, input_line, " ");
         const first_word = it.next();
         const second_word = it.next();
+
         var match = false;
-        // loop through all `commands`, and if it matches the first word supplied,
+
         for (commands) |command| {
-            // if the first word matches this command being iterated...
-            if (std.mem.eql(u8, first_word.?, command)) {
+            if (eql(u8, first_word.?, command)) {
                 match = true;
-                if (std.mem.eql(u8, first_word.?, "help")) Cmd.help();
-                if (std.mem.eql(u8, first_word.?, "h")) Cmd.help();
-                // TODO: Error occurs when command function has 2 args, but 2nd command wasn't supplied in prompt.
-                // Need some error handling. Pass in a default string such as "nothing" if no 2nd word supplied.
-                if (std.mem.eql(u8, first_word.?, "examine")) {
+
+                if (eql(u8, first_word.?, "help")) Cmd.help();
+                if (eql(u8, first_word.?, "h")) Cmd.help();
+                if (eql(u8, first_word.?, "examine")) {
+                    //print("Amount of words: {}", .{it.});
                     Cmd.examine(second_word.?);
                 }
-                if (std.mem.eql(u8, first_word.?, "x")) Cmd.examine(second_word.?);
-                if (std.mem.eql(u8, first_word.?, "look")) Cmd.look();
-                if (std.mem.eql(u8, first_word.?, "l")) Cmd.look();
-                if (std.mem.eql(u8, first_word.?, "take")) Cmd.take(second_word.?);
-                if (std.mem.eql(u8, first_word.?, "drop")) Cmd.drop();
-                if (std.mem.eql(u8, first_word.?, "open")) Cmd.open();
-                if (std.mem.eql(u8, first_word.?, "put")) Cmd.put(second_word.?);
-                if (std.mem.eql(u8, first_word.?, "push")) Cmd.push();
-                if (std.mem.eql(u8, first_word.?, "pull")) Cmd.pull();
-                if (std.mem.eql(u8, first_word.?, "turn")) Cmd.turn();
-                if (std.mem.eql(u8, first_word.?, "feel")) Cmd.feel();
-                if (std.mem.eql(u8, first_word.?, "eat")) Cmd.eat();
-                if (std.mem.eql(u8, first_word.?, "go")) Cmd.go(second_word.?);
+                if (eql(u8, first_word.?, "x")) Cmd.examine(second_word.?);
+                if (eql(u8, first_word.?, "look")) Cmd.look();
+                if (eql(u8, first_word.?, "l")) Cmd.look();
+                if (eql(u8, first_word.?, "take")) Cmd.take(second_word.?);
+                if (eql(u8, first_word.?, "drop")) Cmd.drop();
+                if (eql(u8, first_word.?, "open")) Cmd.open();
+                if (eql(u8, first_word.?, "put")) Cmd.put(second_word.?);
+                if (eql(u8, first_word.?, "push")) Cmd.push();
+                if (eql(u8, first_word.?, "pull")) Cmd.pull();
+                if (eql(u8, first_word.?, "turn")) Cmd.turn();
+                if (eql(u8, first_word.?, "feel")) Cmd.feel();
+                if (eql(u8, first_word.?, "eat")) Cmd.eat();
+                if (eql(u8, first_word.?, "go")) Cmd.go(second_word.?);
                 break;
             }
         }
