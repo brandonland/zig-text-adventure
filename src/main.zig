@@ -208,6 +208,11 @@ pub fn main() !void {
         // TODO: Nested if statements are ugly. This logic needs refactored and restructured.
         // Need to move logic to the command functions.
         //
+        // To fix, I can iterate over the string keys in `cmds` rather than the ugliness of
+        // `commands` and `one_word_commands`, and there is no need to separate the two types of
+        // commands anymore. If a command requires more than one word, then logic for that
+        // should be moved to the command functions themselves.
+        //
         // Separate commands that require only 1 word and commands that require more.
         // Some commands fall under both categories (can have multiple or just 1 word)
         if (it_len == 1) {
