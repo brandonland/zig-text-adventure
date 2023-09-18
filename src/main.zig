@@ -3,6 +3,7 @@ const map = @import("map.zig");
 
 const print = std.debug.print;
 const eql = std.mem.eql;
+const ascii = std.ascii;
 
 const Player = struct {
     name: []const u8,
@@ -48,8 +49,49 @@ const Cmd = struct {
     }
 
     fn go(other_words: ?[]const u8) void {
+        var it = std.mem.splitAny(u8, other_words.?, " ");
+        const w2 = it.next();
+        if (w2) |word| {
+            if (eql(u8, word, "north")) @This().goNorth(w2);
+            if (eql(u8, word, "east")) @This().goEast(w2);
+            if (eql(u8, word, "south")) @This().goSouth(w2);
+            if (eql(u8, word, "west")) @This().goWest(w2);
+            if (eql(u8, word, "up")) @This().goUp(w2);
+            if (eql(u8, word, "down")) @This().goDown(w2);
+        } else {
+            print("Go where?", .{});
+        }
         print("You go somewhere.\n", .{});
+    }
+
+    fn goNorth(other_words: ?[]const u8) void {
         _ = other_words;
+        print("You go north.", .{});
+    }
+
+    fn goEast(other_words: ?[]const u8) void {
+        _ = other_words;
+        print("You go east.", .{});
+    }
+
+    fn goSouth(other_words: ?[]const u8) void {
+        _ = other_words;
+        print("You go south.", .{});
+    }
+
+    fn goWest(other_words: ?[]const u8) void {
+        _ = other_words;
+        print("You go west.", .{});
+    }
+
+    fn goUp(other_words: ?[]const u8) void {
+        _ = other_words;
+        print("You go up.", .{});
+    }
+
+    fn goDown(other_words: ?[]const u8) void {
+        _ = other_words;
+        print("You go down.", .{});
     }
 
     fn examine(other_words: ?[]const u8) void {
@@ -120,7 +162,7 @@ const Cmd = struct {
     }
 
     fn unknown(other_words: ?[]const u8) void {
-        print("Unknown command. Try again.\n", .{});
+        print("Invalid command. Try again.\n", .{});
         _ = other_words;
     }
 };
@@ -174,6 +216,18 @@ pub fn main() !void {
     try cmds.put("feel", Cmd.feel);
     try cmds.put("eat", Cmd.eat);
     try cmds.put("go", Cmd.go);
+    try cmds.put("north", Cmd.goNorth);
+    try cmds.put("n", Cmd.goNorth);
+    try cmds.put("east", Cmd.goEast);
+    try cmds.put("e", Cmd.goEast);
+    try cmds.put("west", Cmd.goWest);
+    try cmds.put("w", Cmd.goWest);
+    try cmds.put("south", Cmd.goSouth);
+    try cmds.put("s", Cmd.goSouth);
+    try cmds.put("up", Cmd.goUp);
+    try cmds.put("u", Cmd.goUp);
+    try cmds.put("down", Cmd.goDown);
+    try cmds.put("d", Cmd.goDown);
 
     defer cmds.deinit();
 
@@ -201,14 +255,16 @@ pub fn main() !void {
             return;
         };
 
-        var it = std.mem.splitAny(u8, input_line, " ");
-        const first_word = it.next();
-        const second_word = it.next();
-        _ = second_word;
+        const allocator = std.heap.page_allocator;
+        const input_lower = try ascii.allocLowerString(allocator, input_line);
+        defer allocator.free(input_lower);
+
+        var it = std.mem.splitAny(u8, input_lower, " ");
+        const first_word = it.next().?;
         it.reset();
 
-        if (cmds.getKey(first_word.?) == null) {
-            Cmd.unknown(first_word.?);
+        if (cmds.getKey(first_word) == null) {
+            Cmd.unknown(first_word);
             continue;
         }
 
@@ -217,14 +273,17 @@ pub fn main() !void {
             it_len += 1;
         }
 
-        var match = false;
-        _ = match;
-
         // At this point, we know the command/word given is not unknown.
-        // We just need to unwrap the optional and call the command function.
-        if (first_word) |word| {
-            const cmd = cmds.get(word);
-            cmd.?(it.rest());
-        }
+        // We just need to unwrap the optional and call the command function,
+        // passing in the rest of the command.
+        //
+        //if (first_word) |word| {
+        //    const cmd = cmds.get(word);
+        //    cmd.?(it.rest());
+        //}
+
+        // This does the same thing.
+        const cmd = cmds.get(first_word);
+        cmd.?(it.rest());
     }
 }
