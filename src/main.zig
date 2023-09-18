@@ -63,6 +63,11 @@ const Cmd = struct {
         _ = other_words;
     }
 
+    fn read(other_words: ?[]const u8) void {
+        print("You read the thing.\n", .{});
+        _ = other_words;
+    }
+
     fn take(other_words: ?[]const u8) void {
         // Need logic here to determine if the object can be taken.
         // Is the object actually an item?
@@ -114,8 +119,9 @@ const Cmd = struct {
         _ = other_words;
     }
 
-    fn unknown() void {
+    fn unknown(other_words: ?[]const u8) void {
         print("Unknown command. Try again.\n", .{});
+        _ = other_words;
     }
 };
 
@@ -149,6 +155,8 @@ pub fn main() !void {
         .gear = null,
     };
 
+    // The reason for this is so that we can have shortcut commands,
+    // e.g. typing "h" will call the "help" command.
     var cmds = std.StringHashMap(*const fn (?[]const u8) void).init(std.heap.page_allocator);
     try cmds.put("help", Cmd.help);
     try cmds.put("h", Cmd.help);
@@ -167,6 +175,8 @@ pub fn main() !void {
     try cmds.put("eat", Cmd.eat);
     try cmds.put("go", Cmd.go);
 
+    defer cmds.deinit();
+
     // Print the current room's description
     try stdout.print("{s}\n", .{map.rooms[p_state.room].description});
 
@@ -179,10 +189,9 @@ pub fn main() !void {
 
         // Print the prompt
         try stdout.print("> ", .{});
-        try bw.flush(); // don't forget to flush!
+        try bw.flush();
 
-        // I don't know why it works yet, but it works.
-        //
+        // Set up reader to read input
         const stdin_reader = std.io.getStdIn().reader();
         var stdin_buffered = std.io.bufferedReader(stdin_reader);
         const stdin_buffered_reader = stdin_buffered.reader();
@@ -195,8 +204,13 @@ pub fn main() !void {
         var it = std.mem.splitAny(u8, input_line, " ");
         const first_word = it.next();
         const second_word = it.next();
-
+        _ = second_word;
         it.reset();
+
+        if (cmds.getKey(first_word.?) == null) {
+            Cmd.unknown(first_word.?);
+            continue;
+        }
 
         var it_len: usize = 0;
         while (it.next() != null) {
@@ -204,61 +218,13 @@ pub fn main() !void {
         }
 
         var match = false;
+        _ = match;
 
-        // TODO: Nested if statements are ugly. This logic needs refactored and restructured.
-        // Need to move logic to the command functions.
-        //
-        // To fix, I can iterate over the string keys in `cmds` rather than the ugliness of
-        // `commands` and `one_word_commands`, and there is no need to separate the two types of
-        // commands anymore. If a command requires more than one word, then logic for that
-        // should be moved to the command functions themselves.
-        //
-        // Separate commands that require only 1 word and commands that require more.
-        // Some commands fall under both categories (can have multiple or just 1 word)
-        if (it_len == 1) {
-            for (one_word_commands) |command| {
-                if (eql(u8, first_word.?, command)) {
-                    match = true;
-                    if (eql(u8, first_word.?, "help")) Cmd.help(it.rest());
-                    if (eql(u8, first_word.?, "h")) Cmd.help(it.rest());
-                    if (eql(u8, first_word.?, "look")) Cmd.look(it.rest());
-                    if (eql(u8, first_word.?, "l")) Cmd.look(it.rest());
-                }
-            }
-        } else if (it_len == 2) {
-            for (commands) |command| {
-                if (eql(u8, first_word.?, command)) {
-                    match = true;
-
-                    // TODO: this is hardcoded
-                    if (eql(u8, first_word.?, "examine")) {
-                        if (it_len != 2) {
-                            print("This command requires exactly two words. Try again.\n", .{});
-                            print("(e.g: {s} door)\n", .{first_word.?});
-                            break;
-                        }
-                        Cmd.examine(second_word.?);
-                    }
-                    if (eql(u8, first_word.?, "help")) Cmd.help(it.rest());
-                    if (eql(u8, first_word.?, "h")) Cmd.help(it.rest());
-                    if (eql(u8, first_word.?, "look")) Cmd.look(it.rest());
-                    if (eql(u8, first_word.?, "l")) Cmd.look(it.rest());
-                    if (eql(u8, first_word.?, "x")) Cmd.examine(it.rest());
-                    if (eql(u8, first_word.?, "take")) Cmd.take(it.rest());
-                    if (eql(u8, first_word.?, "drop")) Cmd.drop(it.rest());
-                    if (eql(u8, first_word.?, "open")) Cmd.open(it.rest());
-                    if (eql(u8, first_word.?, "put")) Cmd.put(it.rest());
-                    if (eql(u8, first_word.?, "push")) Cmd.push(it.rest());
-                    if (eql(u8, first_word.?, "pull")) Cmd.pull(it.rest());
-                    if (eql(u8, first_word.?, "turn")) Cmd.turn(it.rest());
-                    if (eql(u8, first_word.?, "feel")) Cmd.feel(it.rest());
-                    if (eql(u8, first_word.?, "eat")) Cmd.eat(it.rest());
-                    if (eql(u8, first_word.?, "go")) Cmd.go(it.rest());
-                    break;
-                }
-            }
+        // At this point, we know the command/word given is not unknown.
+        // We just need to unwrap the optional and call the command function.
+        if (first_word) |word| {
+            const cmd = cmds.get(word);
+            cmd.?(it.rest());
         }
-
-        if (!match) Cmd.unknown(it.rest());
     }
 }
