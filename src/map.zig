@@ -11,7 +11,7 @@ pub const Room = struct {
     down: ?usize,
 };
 
-pub const rooms = [_]Room{
+pub var rooms = [_]Room{
     Room{ // 0
         .name = "start",
         .description = "This is your bedroom. You keep forgetting to clean it...",

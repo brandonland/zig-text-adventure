@@ -11,7 +11,7 @@ const Player = struct {
 };
 const PlayerState = struct {
     hp: u32,
-    room: u8,
+    room: *map.Room,
     status_effects: ?[]StatusEffect,
     inventory: ?[]Item,
     wielding: ?*Item,
@@ -53,45 +53,52 @@ const Cmd = struct {
         const w2 = it.next();
         if (w2) |word| {
             if (eql(u8, word, "north")) @This().goNorth(w2);
+            if (eql(u8, word, "n")) @This().goNorth(w2);
             if (eql(u8, word, "east")) @This().goEast(w2);
+            if (eql(u8, word, "e")) @This().goEast(w2);
             if (eql(u8, word, "south")) @This().goSouth(w2);
+            if (eql(u8, word, "s")) @This().goSouth(w2);
             if (eql(u8, word, "west")) @This().goWest(w2);
+            if (eql(u8, word, "w")) @This().goWest(w2);
             if (eql(u8, word, "up")) @This().goUp(w2);
+            if (eql(u8, word, "u")) @This().goUp(w2);
             if (eql(u8, word, "down")) @This().goDown(w2);
-        } else {
-            print("Go where?", .{});
+            if (eql(u8, word, "d")) @This().goDown(w2);
         }
-        print("You go somewhere.\n", .{});
+
+        if (w2.?.len == 0) {
+            print("Go where? (n|e|s|w) (north|east|south|west)\n", .{});
+        }
     }
 
     fn goNorth(other_words: ?[]const u8) void {
         _ = other_words;
-        print("You go north.", .{});
+        print("You go north.\n", .{});
     }
 
     fn goEast(other_words: ?[]const u8) void {
         _ = other_words;
-        print("You go east.", .{});
+        print("You go east.\n", .{});
     }
 
     fn goSouth(other_words: ?[]const u8) void {
         _ = other_words;
-        print("You go south.", .{});
+        print("You go south.\n", .{});
     }
 
     fn goWest(other_words: ?[]const u8) void {
         _ = other_words;
-        print("You go west.", .{});
+        print("You go west.\n", .{});
     }
 
     fn goUp(other_words: ?[]const u8) void {
         _ = other_words;
-        print("You go up.", .{});
+        print("You go up.\n", .{});
     }
 
     fn goDown(other_words: ?[]const u8) void {
         _ = other_words;
-        print("You go down.", .{});
+        print("You go down.\n", .{});
     }
 
     fn examine(other_words: ?[]const u8) void {
@@ -167,21 +174,6 @@ const Cmd = struct {
     }
 };
 
-// All commands:
-const commands = [_][]const u8{
-    "help", "h",    "go",   "examine", "x",   "look", "l", "take", "drop", "open", "put",
-    "push", "pull", "turn", "feel",    "eat",
-};
-
-// These commands can be called with just 1 word
-const one_word_commands = [_][]const u8{
-    "help", "h", "look", "l", "feel",
-};
-
-// These commands are called with 2 or more words.
-// Note: some of these can also be one-word commands.
-const two_word_commands = [_][]const u8{ "go", "examine", "x", "" };
-
 pub fn main() !void {
     const stdout_file = std.io.getStdOut().writer();
     var bw = std.io.bufferedWriter(stdout_file);
@@ -190,7 +182,7 @@ pub fn main() !void {
     // Initialize player state
     var p_state: PlayerState = PlayerState{
         .hp = 100,
-        .room = 0,
+        .room = &map.rooms[0],
         .status_effects = null,
         .inventory = null,
         .wielding = null,
@@ -231,13 +223,20 @@ pub fn main() !void {
 
     defer cmds.deinit();
 
+    // TODO: might need a separate hashmap for functions with different signatures.
+    // The reason being: some functions need to update player state, so a *PlayerState
+    // type needs to be passed to certain functions, but not for other functions.
+    // Possibility: call it state_changing_cmds or something.
+    var state_changing_cmds = std.StringHashMap(*const fn (?[]const u8, *PlayerState) void).init(std.heap.page_allocator);
+    _ = state_changing_cmds;
+
     // Print the current room's description
-    try stdout.print("{s}\n", .{map.rooms[p_state.room].description});
+    try stdout.print("{s}\n", .{p_state.room.description});
 
     while (true) {
         // If you've reached the end, you won
-        if (eql(u8, map.rooms[p_state.room].name, "the_end")) {
-            try stdout.print("{s}\n", .{map.rooms[p_state.room].description});
+        if (eql(u8, p_state.room.name, "the_end")) {
+            try stdout.print("{s}\n", .{p_state.room.description});
             break;
         }
 
@@ -260,11 +259,12 @@ pub fn main() !void {
         defer allocator.free(input_lower);
 
         var it = std.mem.splitAny(u8, input_lower, " ");
-        const first_word = it.next().?;
+        const first_word = it.next();
+        const rest = it.rest();
         it.reset();
 
-        if (cmds.getKey(first_word) == null) {
-            Cmd.unknown(first_word);
+        if (cmds.getKey(first_word.?) == null) {
+            Cmd.unknown(first_word.?);
             continue;
         }
 
@@ -283,7 +283,8 @@ pub fn main() !void {
         //}
 
         // This does the same thing.
-        const cmd = cmds.get(first_word);
-        cmd.?(it.rest());
+        const cmd = cmds.get(first_word.?);
+        //print("DBG: rest is: {s}\n", .{rest});
+        cmd.?(rest);
     }
 }
