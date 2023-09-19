@@ -43,12 +43,12 @@ fn isItem() bool {
 }
 
 const Cmd = struct {
-    fn help(other_words: ?[]const u8) void {
+    pub fn help(other_words: ?[]const u8) void {
         print("Help menu\n", .{});
         _ = other_words;
     }
 
-    fn go(other_words: ?[]const u8) void {
+    pub fn go(other_words: ?[]const u8) void {
         var it = std.mem.splitAny(u8, other_words.?, " ");
         const w2 = it.next();
         if (w2) |word| {
@@ -71,53 +71,53 @@ const Cmd = struct {
         }
     }
 
-    fn goNorth(other_words: ?[]const u8) void {
+    pub fn goNorth(other_words: ?[]const u8) void {
         _ = other_words;
         print("You go north.\n", .{});
     }
 
-    fn goEast(other_words: ?[]const u8) void {
+    pub fn goEast(other_words: ?[]const u8) void {
         _ = other_words;
         print("You go east.\n", .{});
     }
 
-    fn goSouth(other_words: ?[]const u8) void {
+    pub fn goSouth(other_words: ?[]const u8) void {
         _ = other_words;
         print("You go south.\n", .{});
     }
 
-    fn goWest(other_words: ?[]const u8) void {
+    pub fn goWest(other_words: ?[]const u8) void {
         _ = other_words;
         print("You go west.\n", .{});
     }
 
-    fn goUp(other_words: ?[]const u8) void {
+    pub fn goUp(other_words: ?[]const u8) void {
         _ = other_words;
         print("You go up.\n", .{});
     }
 
-    fn goDown(other_words: ?[]const u8) void {
+    pub fn goDown(other_words: ?[]const u8) void {
         _ = other_words;
         print("You go down.\n", .{});
     }
 
-    fn examine(other_words: ?[]const u8) void {
+    pub fn examine(other_words: ?[]const u8) void {
         print("You examine the object\n", .{});
         _ = other_words;
     }
 
-    fn look(other_words: ?[]const u8) void {
+    pub fn look(other_words: ?[]const u8) void {
         // This function depends on the location of the player.
         print("You look around.\n", .{});
         _ = other_words;
     }
 
-    fn read(other_words: ?[]const u8) void {
+    pub fn read(other_words: ?[]const u8) void {
         print("You read the thing.\n", .{});
         _ = other_words;
     }
 
-    fn take(other_words: ?[]const u8) void {
+    pub fn take(other_words: ?[]const u8) void {
         // Need logic here to determine if the object can be taken.
         // Is the object actually an item?
         //if (!item.isItem()) {
@@ -127,48 +127,48 @@ const Cmd = struct {
         _ = other_words;
     }
 
-    fn drop(other_words: ?[]const u8) void {
+    pub fn drop(other_words: ?[]const u8) void {
         print("You drop it like it's hot\n", .{});
         _ = other_words;
     }
 
-    fn open(other_words: ?[]const u8) void {
+    pub fn open(other_words: ?[]const u8) void {
         print("You open it.\n", .{});
         _ = other_words;
     }
 
-    fn put(other_words: ?[]const u8) void {
+    pub fn put(other_words: ?[]const u8) void {
         // TODO: Implement "put it in" vs "put it on"
         print("You put it somewhere.\n", .{});
         _ = other_words;
     }
 
-    fn push(other_words: ?[]const u8) void {
+    pub fn push(other_words: ?[]const u8) void {
         print("You push it.\n", .{});
         _ = other_words;
     }
 
-    fn pull(other_words: ?[]const u8) void {
+    pub fn pull(other_words: ?[]const u8) void {
         print("You pull it.\n", .{});
         _ = other_words;
     }
 
-    fn turn(other_words: ?[]const u8) void {
+    pub fn turn(other_words: ?[]const u8) void {
         print("You turn it.\n", .{});
         _ = other_words;
     }
 
-    fn feel(other_words: ?[]const u8) void {
+    pub fn feel(other_words: ?[]const u8) void {
         print("You feel it.\n", .{});
         _ = other_words;
     }
 
-    fn eat(other_words: ?[]const u8) void {
+    pub fn eat(other_words: ?[]const u8) void {
         print("You eat it.\n", .{});
         _ = other_words;
     }
 
-    fn unknown(other_words: ?[]const u8) void {
+    pub fn unknown(other_words: ?[]const u8) void {
         print("Invalid command. Try again.\n", .{});
         _ = other_words;
     }
@@ -266,6 +266,11 @@ pub fn main() !void {
         if (cmds.getKey(first_word.?) == null) {
             Cmd.unknown(first_word.?);
             continue;
+        }
+
+        // Loop through the Cmd struct's method names
+        for (@typeInfo(Cmd).Struct.decls) |decl| {
+            print("decl is {s}\n", .{decl.name});
         }
 
         var it_len: usize = 0;
