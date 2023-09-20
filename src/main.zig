@@ -13,24 +13,25 @@ const PlayerState = struct {
     hp: u32,
     room: *map.Room,
     status_effects: ?[]StatusEffect,
-    inventory: ?[]Item,
-    wielding: ?*Item,
-    gear: ?[]Item,
+    inventory: ?[*]Item,
+    item_wielded: ?*Item,
+    gear_equipped: ?[*]Item,
+    ripperdoc_mods: ?[]Item,
 };
 
 const StatusEffect = struct {
-    key: []const u8, // identifier for retrieval
+    id: []const u8, // identifier for retrieval
     name: []const u8, // printable name
 };
 
 const Item = struct {
-    key: []const u8, // key name (for retrieval)
+    id: []const u8, // for retrieval
     name: []const u8, // Printable name
     description: []const u8,
     stackable: bool,
     type: enum {
         key_item,
-        weapon,
+        wieldable,
         wearable,
         consumable,
         currency,
@@ -79,48 +80,68 @@ const Cmd = struct {
     //pub fn goNorth(p_state: PlayerState) void {
     pub fn goNorthUpdater(obj: CmdPayload) void {
         if (obj.p_state) |state| {
-            print("State: {any}\n", .{state});
-        } else unreachable;
-
-        if (obj.p_state.?.room.north != null) {
-            print("You go north.\n", .{});
-        } else {
-            print("There is no exit that way.", .{});
+            if (state.room.north != null) {
+                print("You go north.\n", .{});
+                state.*.room = &map.rooms[state.room.north.?];
+            } else {
+                print("There is no exit that way.\n", .{});
+            }
         }
     }
 
     pub fn goEastUpdater(obj: CmdPayload) void {
-        print("Player state: {any}", .{obj.p_state.?});
-        print("You go east.\n", .{});
+        if (obj.p_state) |state| {
+            if (state.room.east != null) {
+                print("You go east.\n", .{});
+                state.*.room = &map.rooms[state.room.east.?];
+            } else {
+                print("There is no exit that way.\n", .{});
+            }
+        }
     }
+
     pub fn goSouthUpdater(obj: CmdPayload) void {
         if (obj.p_state) |state| {
             if (state.room.south != null) {
                 print("You go south.\n", .{});
-
                 state.*.room = &map.rooms[state.room.south.?];
-
-                //print("{s}\n", .{state.*.room.description});
             } else {
-                print("There is no exit that way!\n", .{});
+                print("There is no exit that way.\n", .{});
             }
         }
     }
 
     pub fn goWestUpdater(obj: CmdPayload) void {
-        _ = obj.p_state.?;
-        print("You go west.\n", .{});
+        if (obj.p_state) |state| {
+            if (state.room.west != null) {
+                print("You go west.\n", .{});
+                state.*.room = &map.rooms[state.room.west.?];
+            } else {
+                print("There is no exit that way.\n", .{});
+            }
+        }
     }
 
     pub fn goUpUpdater(obj: CmdPayload) void {
-        _ = obj.p_state.?;
-        print("You go up.\n", .{});
+        if (obj.p_state) |state| {
+            if (state.room.up != null) {
+                print("You go up.\n", .{});
+                state.*.room = &map.rooms[state.room.up.?];
+            } else {
+                print("There is no exit that way.\n", .{});
+            }
+        }
     }
 
-    //pub fn goDown(p_state: PlayerState) void {
     pub fn goDownUpdater(obj: CmdPayload) void {
-        _ = obj.p_state.?;
-        print("You go down.\n", .{});
+        if (obj.p_state) |state| {
+            if (state.room.down != null) {
+                print("You go down.\n", .{});
+                state.*.room = &map.rooms[state.room.down.?];
+            } else {
+                print("There is no exit that way.\n", .{});
+            }
+        }
     }
 
     //pub fn examine(input: ?[]const u8) void {
@@ -131,7 +152,9 @@ const Cmd = struct {
 
     //pub fn look(input: ?[]const u8) void {
     pub fn look(obj: CmdPayload) void {
-        // This function depends on the location of the player.
+        // TODO: This function depends on the location of the player.
+        // Each room should have unique information based on what you see
+        // when you "look"
         print("You look around.\n", .{});
         _ = obj.input.?;
     }
@@ -144,8 +167,10 @@ const Cmd = struct {
 
     //pub fn take(input: ?[]const u8) void {
     pub fn takeUpdater(obj: CmdPayload) void {
-        // Need logic here to determine if the object can be taken.
+        // TODO: Need logic here to determine if the object can be taken.
         // Is the object actually an item?
+        // Does your inventory have enough free slots?
+
         //if (!item.isItem()) {
         //    print("This object cannot be taken.", .{});
         //}
@@ -153,61 +178,54 @@ const Cmd = struct {
         _ = obj.input.?;
     }
 
-    //pub fn drop(input: ?[]const u8) void {
     pub fn dropUpdater(obj: CmdPayload) void {
         print("You drop it like it's hot\n", .{});
         _ = obj.input.?;
         _ = obj.p_state.?;
     }
 
-    //pub fn open(input: ?[]const u8) void {
     pub fn open(obj: CmdPayload) void {
         print("You open it.\n", .{});
         _ = obj.input.?;
     }
 
-    //pub fn put(input: ?[]const u8) void {
     pub fn putUpdater(obj: CmdPayload) void {
         // TODO: Implement "put it in" vs "put it on"
+        // In order to "put" something, you must have the thing in your hands.
         print("You put it somewhere.\n", .{});
         _ = obj.input.?;
         _ = obj.p_state.?;
     }
 
-    //pub fn push(input: ?[]const u8) void {
     pub fn push(obj: CmdPayload) void {
         print("You push it.\n", .{});
         _ = obj.input.?;
     }
 
-    //pub fn pull(input: ?[]const u8) void {
     pub fn pull(obj: CmdPayload) void {
         print("You pull it.\n", .{});
         _ = obj.input.?;
     }
 
-    //pub fn turn(input: ?[]const u8) void {
     pub fn turn(obj: CmdPayload) void {
         print("You turn it.\n", .{});
         _ = obj.input.?;
     }
 
-    //pub fn feel(input: ?[]const u8) void {
     pub fn feelUpdater(obj: CmdPayload) void {
         print("You feel it.\n", .{});
         _ = obj.input.?;
     }
 
-    //pub fn eat(input: ?[]const u8) void {
     pub fn eatUpdater(obj: CmdPayload) void {
         print("You eat it.\n", .{});
         _ = obj.input.?;
     }
 
-    //pub fn unknown(input: ?[]const u8) void {
     pub fn unknown(input: ?[]const u8) void {
         _ = input;
         print("Invalid command. Try again.\n", .{});
+        print("(For help, type help or h)", .{});
     }
 };
 
@@ -270,9 +288,6 @@ pub fn main() !void {
     // TODO: might need a separate hashmap for functions with different signatures.
     // The reason being: some functions need to update player state, so a *PlayerState
     // type needs to be passed to certain functions, but not for other functions.
-    // Possibility: call it state_changing_cmds or something.
-    var state_changing_cmds = std.StringHashMap(*const fn (?[]const u8, *PlayerState) void).init(std.heap.page_allocator);
-    _ = state_changing_cmds;
 
     while (true) {
         // Print the current room's description
@@ -316,7 +331,7 @@ pub fn main() !void {
         //    cmd_payload.p_state = &p_state;
         //}
 
-        // This works, but how do we *only* send this in the payload when necessary?
+        // This works, but how do we *only* send this in the payload when it's necessary?
         cmd_payload.p_state = &p_state;
 
         //const this_entry = cmds.getEntry(first_word.?);
@@ -347,18 +362,6 @@ pub fn main() !void {
         //while (it.next() != null) {
         //    it_len += 1;
         //}
-
-        // At this point, we know the command/word given is not unknown.
-        // We just need to unwrap the optional and call the command function,
-        // passing in the rest of the command.
-        //
-        //if (first_word) |word| {
-        //    const cmd = cmds.get(word);
-        //    cmd.?(it.rest());
-        //}
-        //
-
-        //print("First word is {s}", .{first_word.?});
 
         const cmd = cmds.get(first_word.?);
         cmd.?(cmd_payload);
