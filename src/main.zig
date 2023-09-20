@@ -43,135 +43,177 @@ fn isItem() bool {
 }
 
 const Cmd = struct {
-    pub fn help(other_words: ?[]const u8) void {
-        print("Help menu\n", .{});
-        _ = other_words;
+    //pub fn help(input: ?[]const u8) void {
+    pub fn help(obj: CmdPayload) void {
+        const help_target = obj.input.?;
+        print("Help menu\n\n", .{});
+        print("Help target is: {s}\n", .{help_target});
     }
 
-    pub fn go(other_words: ?[]const u8) void {
-        var it = std.mem.splitAny(u8, other_words.?, " ");
+    //pub fn go(input: ?[]const u8, p_state: PlayerState) void {
+    pub fn go(obj: CmdPayload) void {
+        var it = std.mem.splitAny(u8, obj.input.?, " ");
         const w2 = it.next();
         if (w2) |word| {
-            if (eql(u8, word, "north")) @This().goNorth(w2);
-            if (eql(u8, word, "n")) @This().goNorth(w2);
-            if (eql(u8, word, "east")) @This().goEast(w2);
-            if (eql(u8, word, "e")) @This().goEast(w2);
-            if (eql(u8, word, "south")) @This().goSouth(w2);
-            if (eql(u8, word, "s")) @This().goSouth(w2);
-            if (eql(u8, word, "west")) @This().goWest(w2);
-            if (eql(u8, word, "w")) @This().goWest(w2);
-            if (eql(u8, word, "up")) @This().goUp(w2);
-            if (eql(u8, word, "u")) @This().goUp(w2);
-            if (eql(u8, word, "down")) @This().goDown(w2);
-            if (eql(u8, word, "d")) @This().goDown(w2);
+            if (eql(u8, word, "north")) @This().goNorthUpdater(obj);
+            if (eql(u8, word, "n")) @This().goNorthUpdater(obj);
+            if (eql(u8, word, "east")) @This().goEastUpdater(obj);
+            if (eql(u8, word, "e")) @This().goEastUpdater(obj);
+            if (eql(u8, word, "south")) @This().goSouthUpdater(obj);
+            if (eql(u8, word, "s")) @This().goSouthUpdater(obj);
+            if (eql(u8, word, "west")) @This().goWestUpdater(obj);
+            if (eql(u8, word, "w")) @This().goWestUpdater(obj);
+            if (eql(u8, word, "up")) @This().goUpUpdater(obj);
+            if (eql(u8, word, "u")) @This().goUpUpdater(obj);
+            if (eql(u8, word, "down")) @This().goDownUpdater(obj);
+            if (eql(u8, word, "d")) @This().goDownUpdater(obj);
         }
-
         if (w2.?.len == 0) {
             print("Go where? (n|e|s|w) (north|east|south|west)\n", .{});
         }
     }
 
-    pub fn goNorth(other_words: ?[]const u8) void {
-        _ = other_words;
-        print("You go north.\n", .{});
+    // If "Updater" is in the name of the function, this indicates that player state
+    // will change/update. This is required so that we know to pass struct literals
+    // that contain the pointer to PlayerState.
+    //pub fn goNorth(p_state: PlayerState) void {
+    pub fn goNorthUpdater(obj: CmdPayload) void {
+        if (obj.p_state) |state| {
+            print("State: {any}\n", .{state});
+        } else unreachable;
+
+        if (obj.p_state.?.room.north != null) {
+            print("You go north.\n", .{});
+        } else {
+            print("There is no exit that way.", .{});
+        }
     }
 
-    pub fn goEast(other_words: ?[]const u8) void {
-        _ = other_words;
+    pub fn goEastUpdater(obj: CmdPayload) void {
+        print("Player state: {any}", .{obj.p_state.?});
         print("You go east.\n", .{});
     }
+    pub fn goSouthUpdater(obj: CmdPayload) void {
+        if (obj.p_state) |state| {
+            if (state.room.south != null) {
+                print("You go south.\n", .{});
 
-    pub fn goSouth(other_words: ?[]const u8) void {
-        _ = other_words;
-        print("You go south.\n", .{});
+                state.*.room = &map.rooms[state.room.south.?];
+
+                //print("{s}\n", .{state.*.room.description});
+            } else {
+                print("There is no exit that way!\n", .{});
+            }
+        }
     }
 
-    pub fn goWest(other_words: ?[]const u8) void {
-        _ = other_words;
+    pub fn goWestUpdater(obj: CmdPayload) void {
+        _ = obj.p_state.?;
         print("You go west.\n", .{});
     }
 
-    pub fn goUp(other_words: ?[]const u8) void {
-        _ = other_words;
+    pub fn goUpUpdater(obj: CmdPayload) void {
+        _ = obj.p_state.?;
         print("You go up.\n", .{});
     }
 
-    pub fn goDown(other_words: ?[]const u8) void {
-        _ = other_words;
+    //pub fn goDown(p_state: PlayerState) void {
+    pub fn goDownUpdater(obj: CmdPayload) void {
+        _ = obj.p_state.?;
         print("You go down.\n", .{});
     }
 
-    pub fn examine(other_words: ?[]const u8) void {
+    //pub fn examine(input: ?[]const u8) void {
+    pub fn examine(obj: CmdPayload) void {
         print("You examine the object\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
     }
 
-    pub fn look(other_words: ?[]const u8) void {
+    //pub fn look(input: ?[]const u8) void {
+    pub fn look(obj: CmdPayload) void {
         // This function depends on the location of the player.
         print("You look around.\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
     }
 
-    pub fn read(other_words: ?[]const u8) void {
+    //pub fn read(input: ?[]const u8) void {
+    pub fn read(obj: CmdPayload) void {
         print("You read the thing.\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
     }
 
-    pub fn take(other_words: ?[]const u8) void {
+    //pub fn take(input: ?[]const u8) void {
+    pub fn takeUpdater(obj: CmdPayload) void {
         // Need logic here to determine if the object can be taken.
         // Is the object actually an item?
         //if (!item.isItem()) {
         //    print("This object cannot be taken.", .{});
         //}
         print("You take the object\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
     }
 
-    pub fn drop(other_words: ?[]const u8) void {
+    //pub fn drop(input: ?[]const u8) void {
+    pub fn dropUpdater(obj: CmdPayload) void {
         print("You drop it like it's hot\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
+        _ = obj.p_state.?;
     }
 
-    pub fn open(other_words: ?[]const u8) void {
+    //pub fn open(input: ?[]const u8) void {
+    pub fn open(obj: CmdPayload) void {
         print("You open it.\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
     }
 
-    pub fn put(other_words: ?[]const u8) void {
+    //pub fn put(input: ?[]const u8) void {
+    pub fn putUpdater(obj: CmdPayload) void {
         // TODO: Implement "put it in" vs "put it on"
         print("You put it somewhere.\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
+        _ = obj.p_state.?;
     }
 
-    pub fn push(other_words: ?[]const u8) void {
+    //pub fn push(input: ?[]const u8) void {
+    pub fn push(obj: CmdPayload) void {
         print("You push it.\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
     }
 
-    pub fn pull(other_words: ?[]const u8) void {
+    //pub fn pull(input: ?[]const u8) void {
+    pub fn pull(obj: CmdPayload) void {
         print("You pull it.\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
     }
 
-    pub fn turn(other_words: ?[]const u8) void {
+    //pub fn turn(input: ?[]const u8) void {
+    pub fn turn(obj: CmdPayload) void {
         print("You turn it.\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
     }
 
-    pub fn feel(other_words: ?[]const u8) void {
+    //pub fn feel(input: ?[]const u8) void {
+    pub fn feelUpdater(obj: CmdPayload) void {
         print("You feel it.\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
     }
 
-    pub fn eat(other_words: ?[]const u8) void {
+    //pub fn eat(input: ?[]const u8) void {
+    pub fn eatUpdater(obj: CmdPayload) void {
         print("You eat it.\n", .{});
-        _ = other_words;
+        _ = obj.input.?;
     }
 
-    pub fn unknown(other_words: ?[]const u8) void {
+    //pub fn unknown(input: ?[]const u8) void {
+    pub fn unknown(input: ?[]const u8) void {
+        _ = input;
         print("Invalid command. Try again.\n", .{});
-        _ = other_words;
     }
+};
+
+const CmdPayload = struct {
+    input: ?[]const u8 = null,
+    p_state: ?*PlayerState = null,
 };
 
 pub fn main() !void {
@@ -190,36 +232,38 @@ pub fn main() !void {
     };
 
     // The reason for this is so that we can have shortcut commands,
-    // e.g. typing "h" will call the "help" command.
-    var cmds = std.StringHashMap(*const fn (?[]const u8) void).init(std.heap.page_allocator);
+    // e.g. typing "h" will call the "help" command. Also, it's for cleanliness.
+    var cmds = std.StringHashMap(*const fn (CmdPayload) void).init(std.heap.page_allocator);
     try cmds.put("help", Cmd.help);
     try cmds.put("h", Cmd.help);
     try cmds.put("examine", Cmd.examine);
     try cmds.put("x", Cmd.examine);
     try cmds.put("look", Cmd.look);
     try cmds.put("l", Cmd.look);
-    try cmds.put("take", Cmd.take);
-    try cmds.put("drop", Cmd.drop);
+    try cmds.put("read", Cmd.read);
+    try cmds.put("r", Cmd.read);
+    try cmds.put("take", Cmd.takeUpdater);
+    try cmds.put("drop", Cmd.dropUpdater);
     try cmds.put("open", Cmd.open);
-    try cmds.put("put", Cmd.put);
+    try cmds.put("put", Cmd.putUpdater);
     try cmds.put("push", Cmd.push);
     try cmds.put("pull", Cmd.pull);
     try cmds.put("turn", Cmd.turn);
-    try cmds.put("feel", Cmd.feel);
-    try cmds.put("eat", Cmd.eat);
+    try cmds.put("feel", Cmd.feelUpdater);
+    try cmds.put("eat", Cmd.eatUpdater);
     try cmds.put("go", Cmd.go);
-    try cmds.put("north", Cmd.goNorth);
-    try cmds.put("n", Cmd.goNorth);
-    try cmds.put("east", Cmd.goEast);
-    try cmds.put("e", Cmd.goEast);
-    try cmds.put("west", Cmd.goWest);
-    try cmds.put("w", Cmd.goWest);
-    try cmds.put("south", Cmd.goSouth);
-    try cmds.put("s", Cmd.goSouth);
-    try cmds.put("up", Cmd.goUp);
-    try cmds.put("u", Cmd.goUp);
-    try cmds.put("down", Cmd.goDown);
-    try cmds.put("d", Cmd.goDown);
+    try cmds.put("north", Cmd.goNorthUpdater);
+    try cmds.put("n", Cmd.goNorthUpdater);
+    try cmds.put("east", Cmd.goEastUpdater);
+    try cmds.put("e", Cmd.goEastUpdater);
+    try cmds.put("west", Cmd.goWestUpdater);
+    try cmds.put("w", Cmd.goWestUpdater);
+    try cmds.put("south", Cmd.goSouthUpdater);
+    try cmds.put("s", Cmd.goSouthUpdater);
+    try cmds.put("up", Cmd.goUpUpdater);
+    try cmds.put("u", Cmd.goUpUpdater);
+    try cmds.put("down", Cmd.goDownUpdater);
+    try cmds.put("d", Cmd.goDownUpdater);
 
     defer cmds.deinit();
 
@@ -230,10 +274,10 @@ pub fn main() !void {
     var state_changing_cmds = std.StringHashMap(*const fn (?[]const u8, *PlayerState) void).init(std.heap.page_allocator);
     _ = state_changing_cmds;
 
-    // Print the current room's description
-    try stdout.print("{s}\n", .{p_state.room.description});
-
     while (true) {
+        // Print the current room's description
+        try stdout.print("{s}\n", .{p_state.room.description});
+
         // If you've reached the end, you won
         if (eql(u8, p_state.room.name, "the_end")) {
             try stdout.print("{s}\n", .{p_state.room.description});
@@ -263,20 +307,46 @@ pub fn main() !void {
         const rest = it.rest();
         it.reset();
 
+        var cmd_payload = CmdPayload{ .input = rest };
+
+        // Find out if the first_word needs to call a function that requires updates PlayerState.
+        // If so, add player state to the payload.
+        // This doesn't work.
+        //if (std.mem.endsWith(u8, cmds.get(first_word.?), "Updater")) {
+        //    cmd_payload.p_state = &p_state;
+        //}
+
+        // This works, but how do we *only* send this in the payload when necessary?
+        cmd_payload.p_state = &p_state;
+
+        //const this_entry = cmds.getEntry(first_word.?);
+        //print("This entry: {any}\n", .{this_entry});
+
         if (cmds.getKey(first_word.?) == null) {
             Cmd.unknown(first_word.?);
             continue;
         }
 
         // Loop through the Cmd struct's method names
-        for (@typeInfo(Cmd).Struct.decls) |decl| {
-            print("decl is {s}\n", .{decl.name});
-        }
+        //const MyStruct = @typeInfo(Cmd).Struct;
+        //print("MyStruct layout: {any}\n\n", .{MyStruct.layout});
 
-        var it_len: usize = 0;
-        while (it.next() != null) {
-            it_len += 1;
-        }
+        //for (@typeInfo(Cmd).Struct.decls) |decl| {
+        //    print("decl.name is {s}\n", .{decl.name});
+        // decl is a string of the name of a method that's being looped over in the struct.
+        // I want to be able to call the method/function by for example:
+        // Pseudocode:
+        // mystruct.callMethodByName(decl, .{arg1, arg2});
+        //if (eql(u8, decl.name, "help") {
+        //@call(.auto, Cmd.@"help", .{""});
+        //@field(Cmd, decl.name)
+        //}
+        //}
+
+        //var it_len: usize = 0;
+        //while (it.next() != null) {
+        //    it_len += 1;
+        //}
 
         // At this point, we know the command/word given is not unknown.
         // We just need to unwrap the optional and call the command function,
@@ -286,10 +356,11 @@ pub fn main() !void {
         //    const cmd = cmds.get(word);
         //    cmd.?(it.rest());
         //}
+        //
 
-        // This does the same thing.
+        //print("First word is {s}", .{first_word.?});
+
         const cmd = cmds.get(first_word.?);
-        //print("DBG: rest is: {s}\n", .{rest});
-        cmd.?(rest);
+        cmd.?(cmd_payload);
     }
 }
