@@ -24,7 +24,7 @@ const StatusEffect = struct {
     name: []const u8, // printable name
 };
 
-const Item = struct {
+pub const Item = struct {
     id: []const u8, // for retrieval
     name: []const u8, // Printable name
     description: []const u8,
@@ -83,6 +83,7 @@ const Cmd = struct {
             if (state.room.north != null) {
                 print("You go north.\n", .{});
                 state.*.room = &map.rooms[state.room.north.?];
+                print("{s}\n", .{state.room.description});
             } else {
                 print("There is no exit that way.\n", .{});
             }
@@ -94,6 +95,7 @@ const Cmd = struct {
             if (state.room.east != null) {
                 print("You go east.\n", .{});
                 state.*.room = &map.rooms[state.room.east.?];
+                print("{s}\n", .{state.room.description});
             } else {
                 print("There is no exit that way.\n", .{});
             }
@@ -105,6 +107,7 @@ const Cmd = struct {
             if (state.room.south != null) {
                 print("You go south.\n", .{});
                 state.*.room = &map.rooms[state.room.south.?];
+                print("{s}\n", .{state.room.description});
             } else {
                 print("There is no exit that way.\n", .{});
             }
@@ -116,6 +119,7 @@ const Cmd = struct {
             if (state.room.west != null) {
                 print("You go west.\n", .{});
                 state.*.room = &map.rooms[state.room.west.?];
+                print("{s}\n", .{state.room.description});
             } else {
                 print("There is no exit that way.\n", .{});
             }
@@ -127,6 +131,7 @@ const Cmd = struct {
             if (state.room.up != null) {
                 print("You go up.\n", .{});
                 state.*.room = &map.rooms[state.room.up.?];
+                print("{s}\n", .{state.room.description});
             } else {
                 print("There is no exit that way.\n", .{});
             }
@@ -138,6 +143,7 @@ const Cmd = struct {
             if (state.room.down != null) {
                 print("You go down.\n", .{});
                 state.*.room = &map.rooms[state.room.down.?];
+                print("{s}\n", .{state.room.description});
             } else {
                 print("There is no exit that way.\n", .{});
             }
@@ -245,8 +251,9 @@ pub fn main() !void {
         .room = &map.rooms[0],
         .status_effects = null,
         .inventory = null,
-        .wielding = null,
-        .gear = null,
+        .item_wielded = null,
+        .gear_equipped = null,
+        .ripperdoc_mods = null,
     };
 
     // The reason for this is so that we can have shortcut commands,
@@ -289,9 +296,10 @@ pub fn main() !void {
     // The reason being: some functions need to update player state, so a *PlayerState
     // type needs to be passed to certain functions, but not for other functions.
 
+    // Print the current room's description
+    try stdout.print("{s}\n", .{p_state.room.description});
+
     while (true) {
-        // Print the current room's description
-        try stdout.print("{s}\n", .{p_state.room.description});
 
         // If you've reached the end, you won
         if (eql(u8, p_state.room.name, "the_end")) {
