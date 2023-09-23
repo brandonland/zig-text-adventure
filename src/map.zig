@@ -1,64 +1,73 @@
-// This file represents the hard-coded map of the game. This should eventually not be
-// represented in actual code; it should eventually be migrated to a database.
-// Rooms, ports, item locations, etc. should be defined in this file.
-
 const Item = @import("main.zig").Item;
 
 const Direction = enum { north, east, south, west };
 
-const Door = struct {
-    var stays_unlocked: bool = true; // by default, doors don't auto-lock behind you.
-};
+//pub const Door = struct {
+//    // TODO: Lockable doors are different depending on which side of the door you are on.
+//    // on one side, you don't need the key to lock it. On the other, you do.
+//    var autolocks: bool = true; // by default, doors don't auto-lock behind you.
+//    var lockable: bool = true;
+//
+//    is_lockable: bool = true,
+//};
+//
+//pub const Opening = struct {
+//    // declaration are here so that they can be changed programmatically if needed.
+//    var autolocks: bool = false;
+//    var lockable: bool = false;
+//};
+//
+//pub const Ledge = struct {
+//    var autolocks: bool = false; // by default, requires an item to "get down" from ledge.
+//    var lockable: bool = true; //
+//
+//    is_one_way_only: bool, // Some ledges can be jumped down but not climbed up.
+//};
+//
+//pub const Tunnel = struct {
+//    const autolock: bool = false;
+//    var exists: bool = true; // possible not to exist until you dig with a shovel.
+//    var requires_key: bool = false;
+//
+//    //fn init(self: *Self, exists: bool) Self {
+//    //
+//    //
+//    //}
+//};
+//
+//pub const Bridge = struct {
+//    var stays_unlocked: bool = true; // by default, doors don't auto-lock behind you.
+//};
 
-const Opening = struct {
-    // declaration are here so that they can be changed programmatically if needed.
-    var stays_unlocked: bool = true;
-};
-
-const Ledge = struct {
-    var stays_unlocked: bool = false; // by default, requires an item to "get down" from ledge.
-
-    is_one_way_only: bool, // Some ledges can be jumped down but not climbed up.
-};
-
-const Hole = struct {
-    var stays_unlocked: bool = true;
-    var exists: bool = true;
-};
-
-const Bridge = struct {
-    var stays_unlocked: bool = true; // by default, doors don't auto-lock behind you.
-};
-
-const PortType = union {
-    door: Door,
-    ledge: Ledge,
-    bridge: Bridge,
-    hole: Hole,
+const PortType = enum {
+    door,
+    ledge,
+    bridge,
+    tunnel,
+    opening,
 };
 
 const Port = struct {
     const Self = @This();
+    var locked: bool = false;
 
-    var is_locked: bool = false; // needs to be changeable on the fly
-
+    port_id: u8,
+    port_sibling_id: u8,
     direction: Direction,
     port_type: PortType,
     description: []const u8,
-    requires_key: bool,
-    rooms: *[2]Room, // A port always connects two rooms
-
-    // The item required to open the port.
-    // It's possible the port can be locked/closed without requiring an item, too,
-    // e.g. for doors that require a password instead of an item.
+    //connected_rooms: [2]usize,
+    from_room_id: u8,
+    to_room_id: u8,
     key: ?Item = null,
 
     // Some ports will stay open once they were opened, e.g. shovel to dig.
     // Other ports will always require an item to be used on it, e.g. parachute.
     // Or perhaps some doors will auto-lock when they close behind you.
-    fn stays_unlocked(self: Self) bool {
-        return self.port_type.stays_unlocked;
-    }
+    //fn stays_unlocked(self: Self) bool {
+    //    return self.port_type.stays_unlocked;
+    //}
+
 };
 
 pub const Room = struct {
@@ -71,17 +80,54 @@ pub const Room = struct {
     west: ?usize,
     up: ?usize,
     down: ?usize,
-    ports: ?[*]Port, // Optional because some rooms need a port created (dig hole)
+    //ports: ?[]u8, // Optional because some rooms need a port created (dig hole)
+    //ports: [*]Port,
+
+    //pub fn getPortByDirection(d: Direction) *Port {
+    //    _ = d;
+    //if (@typeInfo(Direction).Enum.fields)
+
+    // Check to see if corresponding Room.<direction> field has a value
+    //inline for (@typeInfo(@This().Struct.fields)) |field| {
+    //    if (std.mem.eql(u8, field, @typeInfo(d))) {
+
+    //    }
+    //}
+
+    //const result = switch (d) {
+    //    //Direction.north =>
+    //};
+
+    //if (result != null) {
+
+    //}
+
+    //   return &@This().ports[0];
+    //}
+
 };
 
-// TODO: Room "ports" have two different states: open or closed.
-// e.g. a locked door is a closed port until it is unlocked,
-// and a blocked pathway is closed until it is somehow cleared.
-// It may or may not be immediately obvious to the player that a direction
-// has a port or not. e.g., "There is a pile of rubble to the east" doesn't
-// necessarily mean you can dig through it. Or "There's a river below the bridge" doesn't
-// mean you can jump down safely. You may need certain items to access closed ports,
-// such as keys to unlock, shovels to dig, parachutes to land, or even ladders to climb.
+pub var ports: []Port = .{
+    Port{
+        .port_id = 0,
+        .port_sibling_id = 1,
+        .port_type = PortType.door,
+        .direction = Direction.south,
+        .description = "There is a door to your south.",
+        .from_room_id = 0,
+        .to_room_id = 1,
+    },
+    Port{
+        .port_id = 1,
+        .port_sibling_id = 0,
+        .port_type = PortType.door,
+        .direction = Direction.north,
+        .description = "There is a door to your north.",
+        .from_room_id = 1,
+        .to_room_id = 0,
+    },
+};
+
 pub var rooms = [_]Room{
     Room{ // 0
         .name = "start",
@@ -93,13 +139,8 @@ pub var rooms = [_]Room{
         .west = null,
         .up = null,
         .down = null,
-        .ports = .{
-            Port{
-                .direction = Direction.south,
-                .description = "There is a door to your south.",
-                .remains_open = true,
-            },
-        },
+        //.ports = &[_]Port{ports[0]},
+        //.ports = [_]u8{0},
     },
     Room{ // 1
         .name = "apartment_living_room",
@@ -111,46 +152,43 @@ pub var rooms = [_]Room{
         .west = null,
         .up = null,
         .down = null,
-        .ports = .{
-            Port{
-                .direction = Direction.east,
-                .description = "There is a door to your east.",
-                .key = null,
-                .remains_open = true,
-            },
-        },
+        //.ports = &[_]Port{ports[1]},
+        //.ports = [_]u8{1},
     },
-    Room{ // 2
-        .name = "bathroom",
-        .description = "A cute little bathroom.",
-        .items = null,
-        .north = null,
-        .east = null,
-        .south = null,
-        .west = 1, // connected to living room
-        .up = null,
-        .down = null,
-    },
-    Room{ // 3
-        .name = "your_apartment_entrance",
-        .description = "Just outside of your apartment building.",
-        .items = null,
-        .north = 1,
-        .east = null,
-        .south = 4,
-        .west = null,
-        .up = null,
-        .down = null,
-    },
-    Room{ // 4
-        .name = "the_end",
-        .description = "You made it!",
-        .items = null,
-        .north = null,
-        .east = null,
-        .south = 1,
-        .west = null,
-        .up = null,
-        .down = null,
-    },
+    //Room{ // 2
+    //    .name = "bathroom",
+    //    .description = "A cute little bathroom.",
+    //    .items = null,
+    //    .north = null,
+    //    .east = null,
+    //    .south = null,
+    //    .west = 1, // connected to living room
+    //    .up = null,
+    //    .down = null,
+    //    .ports = null,
+    //},
+    //Room{ // 3
+    //    .name = "your_apartment_entrance",
+    //    .description = "Just outside of your apartment building.",
+    //    .items = null,
+    //    .north = 1,
+    //    .east = null,
+    //    .south = 4,
+    //    .west = null,
+    //    .up = null,
+    //    .down = null,
+    //    .ports = null,
+    //},
+    //Room{ // 4
+    //    .name = "the_end",
+    //    .description = "You made it!",
+    //    .items = null,
+    //    .north = null,
+    //    .east = null,
+    //    .south = 1,
+    //    .west = null,
+    //    .up = null,
+    //    .down = null,
+    //    .ports = null,
+    //},
 };

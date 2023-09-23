@@ -74,6 +74,9 @@ const Cmd = struct {
         }
     }
 
+    // TODO: Make this more DRY. A single go() function should be able to loop over
+    // each direction.
+
     // If "Updater" is in the name of the function, this indicates that player state
     // will change/update. This is required so that we know to pass struct literals
     // that contain the pointer to PlayerState.
