@@ -9,33 +9,21 @@ const Player = struct {
     name: []const u8,
     description: []const u8,
 };
+
 const PlayerState = struct {
     hp: u32,
     room: *map.Room,
     status_effects: ?[]StatusEffect,
-    inventory: ?[*]Item,
-    item_wielded: ?*Item,
-    gear_equipped: ?[*]Item,
+    inventory: ?[]const Item,
+    item_wielded: ?Item,
+    gear_equipped: ?[]Item,
     ripperdoc_mods: ?[]Item,
+    carrying_capacity: f16,
 };
 
 const StatusEffect = struct {
     id: []const u8, // identifier for retrieval
     name: []const u8, // printable name
-};
-
-pub const Item = struct {
-    id: []const u8, // for retrieval
-    name: []const u8, // Printable name
-    description: []const u8,
-    stackable: bool,
-    type: enum {
-        key_item,
-        wieldable,
-        wearable,
-        consumable,
-        currency,
-    },
 };
 
 fn isItem() bool {
@@ -47,11 +35,11 @@ const Cmd = struct {
     //pub fn help(input: ?[]const u8) void {
     pub fn help(obj: CmdPayload) void {
         const help_target = obj.input.?;
-        print("Help menu\n\n", .{});
-        print("Help target is: {s}\n", .{help_target});
+        _ = help_target;
+        print("\nHelp menu - Coming soon\n\n", .{});
     }
 
-    //pub fn go(input: ?[]const u8, p_state: PlayerState) void {
+    //pub fn go(input: ?[]const u8, player: PlayerState) void {
     pub fn go(obj: CmdPayload) void {
         var it = std.mem.splitAny(u8, obj.input.?, " ");
         const w2 = it.next();
@@ -80,9 +68,9 @@ const Cmd = struct {
     // If "Updater" is in the name of the function, this indicates that player state
     // will change/update. This is required so that we know to pass struct literals
     // that contain the pointer to PlayerState.
-    //pub fn goNorth(p_state: PlayerState) void {
+    //pub fn goNorth(player: PlayerState) void {
     pub fn goNorthUpdater(obj: CmdPayload) void {
-        if (obj.p_state) |state| {
+        if (obj.player) |state| {
             if (state.room.north != null) {
                 print("You go north.\n", .{});
                 state.*.room = &map.rooms[state.room.north.?];
@@ -94,7 +82,7 @@ const Cmd = struct {
     }
 
     pub fn goEastUpdater(obj: CmdPayload) void {
-        if (obj.p_state) |state| {
+        if (obj.player) |state| {
             if (state.room.east != null) {
                 print("You go east.\n", .{});
                 state.*.room = &map.rooms[state.room.east.?];
@@ -106,7 +94,7 @@ const Cmd = struct {
     }
 
     pub fn goSouthUpdater(obj: CmdPayload) void {
-        if (obj.p_state) |state| {
+        if (obj.player) |state| {
             if (state.room.south != null) {
                 print("You go south.\n", .{});
                 state.*.room = &map.rooms[state.room.south.?];
@@ -118,7 +106,7 @@ const Cmd = struct {
     }
 
     pub fn goWestUpdater(obj: CmdPayload) void {
-        if (obj.p_state) |state| {
+        if (obj.player) |state| {
             if (state.room.west != null) {
                 print("You go west.\n", .{});
                 state.*.room = &map.rooms[state.room.west.?];
@@ -130,7 +118,7 @@ const Cmd = struct {
     }
 
     pub fn goUpUpdater(obj: CmdPayload) void {
-        if (obj.p_state) |state| {
+        if (obj.player) |state| {
             if (state.room.up != null) {
                 print("You go up.\n", .{});
                 state.*.room = &map.rooms[state.room.up.?];
@@ -142,7 +130,7 @@ const Cmd = struct {
     }
 
     pub fn goDownUpdater(obj: CmdPayload) void {
-        if (obj.p_state) |state| {
+        if (obj.player) |state| {
             if (state.room.down != null) {
                 print("You go down.\n", .{});
                 state.*.room = &map.rooms[state.room.down.?];
@@ -168,6 +156,53 @@ const Cmd = struct {
         _ = obj.input.?;
     }
 
+    // From the PlayerState object, fetch the room, and from that, the port.
+    // then update the port's locked state.
+    // If you say "lock door", this should succeed if there is only 1 door in the room.
+    // If there are multiple doors, you will need to specify which door by "east door" or "front door", etc.
+    pub fn lock(obj: CmdPayload) void {
+        //var requires_key: bool = true;
+        var doors_count: u4 = 0;
+        var target_door: *const map.Port = undefined;
+        const input = obj.input.?;
+        print("Input is: {s}\n", .{input});
+
+        // Loop through the ports of the current room...
+        if (obj.player) |p| {
+            for (p.*.room.ports) |*port| {
+                const port_type = @tagName(port.port_type);
+                if (!std.mem.containsAtLeast(u8, input, 1, port_type)) continue; // bail if not door
+                doors_count += 1; // We know this is a door now.
+                // if it matches the exact name of the door, this is the target door.
+                if (std.mem.containsAtLeast(u8, port.name, 1, input)) {
+                    target_door = port;
+                }
+            }
+            //if (p.room.*.ports)
+        } else unreachable;
+
+        // If there's more than one door and the target door could not be determined, then bail
+        if (doors_count > 1) {
+            print("...But which door?\n", .{});
+        } else if (doors_count == 0) {
+            print("There aren't any doors in this room.", .{});
+        } else if (doors_count == 1) {
+            if (target_door != undefined) {
+                print("Locking the door...\n", .{});
+                target_door.*.lock();
+            } else {
+                print("There is no target door! Huh??\n", .{});
+            }
+        }
+    }
+
+    // This should work for doors, safes, anything that can be locked in the first place.
+    // Doors can only be unlocked from the side with the latch if you don't have a key or lockpick.
+    // if you *do* have the key or lockpick, you can unlock from either side.
+    pub fn unlock(obj: CmdPayload) void {
+        _ = obj;
+    }
+
     //pub fn read(input: ?[]const u8) void {
     pub fn read(obj: CmdPayload) void {
         print("You read the thing.\n", .{});
@@ -190,7 +225,7 @@ const Cmd = struct {
     pub fn dropUpdater(obj: CmdPayload) void {
         print("You drop it like it's hot\n", .{});
         _ = obj.input.?;
-        _ = obj.p_state.?;
+        _ = obj.player.?;
     }
 
     pub fn open(obj: CmdPayload) void {
@@ -203,7 +238,7 @@ const Cmd = struct {
         // In order to "put" something, you must have the thing in your hands.
         print("You put it somewhere.\n", .{});
         _ = obj.input.?;
-        _ = obj.p_state.?;
+        _ = obj.player.?;
     }
 
     pub fn push(obj: CmdPayload) void {
@@ -234,30 +269,97 @@ const Cmd = struct {
     pub fn unknown(input: ?[]const u8) void {
         _ = input;
         print("Invalid command. Try again.\n", .{});
-        print("(For help, type help or h)", .{});
+        print("(For help, type help or h)\n", .{});
     }
 };
 
 const CmdPayload = struct {
     input: ?[]const u8 = null,
-    p_state: ?*PlayerState = null,
+    player: ?*PlayerState = null,
 };
+
+const ItemType = enum {
+    basic,
+    wieldable,
+    wearable,
+    consumable,
+    currency,
+};
+
+pub const Item = struct {
+    id: u16, // for retrieval
+    name: []const u8, // Printable name
+    description: []const u8,
+    stackable: bool,
+    type: ItemType,
+    degradable: bool = false,
+    weight: f16, // in lbs
+    is_key: bool = false,
+};
+
+pub const ItemsList = std.MultiArrayList(Item);
 
 pub fn main() !void {
     const stdout_file = std.io.getStdOut().writer();
     var bw = std.io.bufferedWriter(stdout_file);
     const stdout = bw.writer();
 
+    // Initialize Item list
+    var items_gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const items_allocator = items_gpa.allocator();
+    var items_list = ItemsList{};
+    defer _ = items_gpa.deinit();
+
+    // Append the items
+    // TODO: move this to its own file to list out and append every item.
+    try items_list.append(items_allocator, .{
+        .id = 0,
+        .name = "simple key",
+        .description = "It's a key. It must fit a lock somewhere.",
+        .stackable = false,
+        .is_key = true,
+        .type = ItemType.basic,
+        .weight = 0.1,
+    });
+    try items_list.append(items_allocator, .{
+        .id = 1,
+        .name = "lockpick",
+        .description = "A lockpick. One of your favorite tools.",
+        .stackable = true,
+        .degradable = true,
+        .is_key = true, // Opens various things but degrades over time
+        .type = ItemType.basic,
+        .weight = 0.1,
+    });
+    try items_list.append(items_allocator, .{
+        .id = 2,
+        .name = "baseball bat",
+        .description = "A sturdy baseball bat that was handed down to you from your grandfather.",
+        .stackable = false,
+        .is_key = true, // Can be used to break windows.
+        .type = ItemType.wieldable,
+        .weight = 2.5,
+    });
+
     // Initialize player state
-    var p_state: PlayerState = PlayerState{
+    var player: PlayerState = PlayerState{
         .hp = 100,
         .room = &map.rooms[0],
         .status_effects = null,
-        .inventory = null,
+        .inventory = &[_]Item{
+            items_list.get(0), //key
+            items_list.get(2), //baseball bat
+        },
         .item_wielded = null,
         .gear_equipped = null,
         .ripperdoc_mods = null,
+        .carrying_capacity = 60.0,
     };
+
+    //print("Printing inventory: \n\n", .{});
+    //for (player.inventory.?) |item| {
+    //    print("Item: {s}\n\n", .{item.name});
+    //}
 
     // The reason for this is so that we can have shortcut commands,
     // e.g. typing "h" will call the "help" command. Also, it's for cleanliness.
@@ -268,6 +370,8 @@ pub fn main() !void {
     try cmds.put("x", Cmd.examine);
     try cmds.put("look", Cmd.look);
     try cmds.put("l", Cmd.look);
+    try cmds.put("lock", Cmd.lock);
+    try cmds.put("unlock", Cmd.unlock);
     try cmds.put("read", Cmd.read);
     try cmds.put("r", Cmd.read);
     try cmds.put("take", Cmd.takeUpdater);
@@ -300,13 +404,13 @@ pub fn main() !void {
     // type needs to be passed to certain functions, but not for other functions.
 
     // Print the current room's description
-    try stdout.print("{s}\n", .{p_state.room.description});
+    try stdout.print("{s}\n", .{player.room.description});
 
     while (true) {
 
         // If you've reached the end, you won
-        if (eql(u8, p_state.room.name, "the_end")) {
-            try stdout.print("{s}\n", .{p_state.room.description});
+        if (eql(u8, player.room.name, "the_end")) {
+            try stdout.print("{s}\n", .{player.room.description});
             break;
         }
 
@@ -339,11 +443,11 @@ pub fn main() !void {
         // If so, add player state to the payload.
         // This doesn't work.
         //if (std.mem.endsWith(u8, cmds.get(first_word.?), "Updater")) {
-        //    cmd_payload.p_state = &p_state;
+        //    cmd_payload.player = &player;
         //}
 
         // This works, but how do we *only* send this in the payload when it's necessary?
-        cmd_payload.p_state = &p_state;
+        cmd_payload.player = &player;
 
         //const this_entry = cmds.getEntry(first_word.?);
         //print("This entry: {any}\n", .{this_entry});
