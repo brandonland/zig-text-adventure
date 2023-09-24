@@ -163,25 +163,26 @@ const Cmd = struct {
     pub fn lock(obj: CmdPayload) void {
         //var requires_key: bool = true;
         var doors_count: u4 = 0;
-        var target_door: *const map.Port = undefined;
+        var target_door: *map.Port = undefined;
         const input = obj.input.?;
         print("Input is: {s}\n", .{input});
 
         // Loop through the ports of the current room...
-        if (obj.player) |p| {
+        if (obj.player) |*p| {
             for (p.*.room.ports) |*port| {
                 const port_type = @tagName(port.port_type);
                 if (!std.mem.containsAtLeast(u8, input, 1, port_type)) continue; // bail if not door
-                doors_count += 1; // We know this is a door now.
+                doors_count += 1;
                 // if it matches the exact name of the door, this is the target door.
                 if (std.mem.containsAtLeast(u8, port.name, 1, input)) {
-                    target_door = port;
+                    //target_door = @constCast(port);
+                    //@constCast(port).lock();
+                    port.lock();
                 }
             }
-            //if (p.room.*.ports)
         } else unreachable;
 
-        // If there's more than one door and the target door could not be determined, then bail
+        // If there's more than one door and the target door could not be determined, then bail for now
         if (doors_count > 1) {
             print("...But which door?\n", .{});
         } else if (doors_count == 0) {
@@ -189,7 +190,7 @@ const Cmd = struct {
         } else if (doors_count == 1) {
             if (target_door != undefined) {
                 print("Locking the door...\n", .{});
-                target_door.*.lock();
+                //target_door.lock();
             } else {
                 print("There is no target door! Huh??\n", .{});
             }

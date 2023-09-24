@@ -1,3 +1,4 @@
+const std = @import("std");
 const Item = @import("main.zig").Item;
 
 const Direction = enum { north, east, south, west };
@@ -60,7 +61,7 @@ pub const DoorSide = enum {
 pub const Port = struct {
     const Self = @This();
 
-    var locked: bool = false;
+    //var locked: bool = false;
 
     id: u8,
     name: []const u8,
@@ -68,11 +69,11 @@ pub const Port = struct {
     direction: Direction,
     port_type: PortType,
     description: []const u8,
-    //connected_rooms: [2]usize,
     from_room_id: u8,
     to_room_id: u8,
     key: ?Item = null,
     lockable: ?bool = null,
+    locked: bool = false,
     door_side: ?DoorSide = null,
 
     pub fn is_locked(self: Self) bool {
@@ -80,9 +81,10 @@ pub const Port = struct {
     }
     pub fn lock(self: *Self) void {
         self.*.locked = true;
+        std.debug.print("hellooooooo", .{});
     }
     pub fn unlock(self: *Self) void {
-        self.*.locked = false;
+        self.locked = false;
     }
 
     // Some ports will stay open once they were opened, e.g. shovel to dig.
@@ -134,26 +136,50 @@ pub const Room = struct {
 
 };
 
-//pub var ports = [_]Port{
-//    Port{
-//        .id = 0,
-//        .port_sibling_id = 1,
-//        .port_type = PortType.door,
-//        .direction = Direction.south,
-//        .description = "There is a door to your south.",
-//        .from_room_id = 0,
-//        .to_room_id = 1,
-//    },
-//    Port{
-//        .id = 1,
-//        .port_sibling_id = 0,
-//        .port_type = PortType.door,
-//        .direction = Direction.north,
-//        .description = "There is a door to your north.",
-//        .from_room_id = 1,
-//        .to_room_id = 0,
-//    },
-//};
+pub var ports = [_]Port{
+    Port{
+        .id = 0,
+        .port_sibling_id = 1,
+        .port_type = PortType.door,
+        .direction = Direction.south,
+        .description = "There is a door to your south.",
+        .from_room_id = 0,
+        .to_room_id = 1,
+    },
+    Port{
+        .id = 1,
+        .port_sibling_id = 0,
+        .port_type = PortType.door,
+        .direction = Direction.north,
+        .description = "There is a door to your north.",
+        .from_room_id = 1,
+        .to_room_id = 0,
+    },
+    Port{
+        .id = 2,
+        .name = "bathroom door",
+        .port_sibling_id = 3,
+        .port_type = PortType.door,
+        .direction = Direction.east,
+        .description = "The bathroom door is to the east.",
+        .from_room_id = 1,
+        .to_room_id = 2,
+        .lockable = true,
+        .door_side = DoorSide.outside,
+    },
+    Port{
+        .id = 3,
+        .name = "bathroom door",
+        .port_sibling_id = 2,
+        .port_type = PortType.door,
+        .direction = Direction.west,
+        .description = "You can exit the bathroom to the west.",
+        .from_room_id = 1,
+        .to_room_id = 2,
+        .lockable = true,
+        .door_side = DoorSide.inside,
+    },
+};
 
 pub var rooms = [_]Room{
     Room{ // 0
@@ -245,28 +271,28 @@ pub var rooms = [_]Room{
             },
         },
     },
-    //Room{ // 3
-    //    .name = "your_apartment_entrance",
-    //    .description = "Just outside of your apartment building.",
-    //    .items = null,
-    //    .north = 1,
-    //    .east = null,
-    //    .south = 4,
-    //    .west = null,
-    //    .up = null,
-    //    .down = null,
-    //    .ports = null,
-    //},
-    //Room{ // 4
-    //    .name = "the_end",
-    //    .description = "You made it!",
-    //    .items = null,
-    //    .north = null,
-    //    .east = null,
-    //    .south = 1,
-    //    .west = null,
-    //    .up = null,
-    //    .down = null,
-    //    .ports = null,
-    //},
+    Room{ // 3
+        .name = "your_apartment_entrance",
+        .description = "Just outside of your apartment building.",
+        .items = null,
+        .north = 1,
+        .east = null,
+        .south = 4,
+        .west = null,
+        .up = null,
+        .down = null,
+        .ports = null,
+    },
+    Room{ // 4
+        .name = "the_end",
+        .description = "You made it!",
+        .items = null,
+        .north = null,
+        .east = null,
+        .south = 1,
+        .west = null,
+        .up = null,
+        .down = null,
+        .ports = null,
+    },
 };
