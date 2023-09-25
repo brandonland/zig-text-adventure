@@ -15,11 +15,14 @@ Dependencies:
 ### To Do
 - [x] Add some basic commands that print to the screen
 - [x] Refactor code to use `StringHashMap` for commands
-- [ ] Basic movement commands
+- [x] Basic movement commands
+- [x] Door instances will "lock" when you say "lock door"
+    - While this is reflected in the code, there isn't any logic yet, e.g. for preventing the player
+    from walking through a locked door anyway.
+- [ ] Locked doors prevent you from walking through them.
+- [ ] Using a key item/object to unlock a door works
 - [ ] Player inventory 
-    - [ ] Stackable items
-    - [ ] Consumables
+    - [ ] Can hold items
+    - [ ] Items can stack
+    - [ ] Can consume certain items
         - [ ] Cooldown timer upon consuming 
-        - [ ] 
-- [ ] Take <object> command
-...

@@ -160,6 +160,13 @@ const Cmd = struct {
     // then update the port's locked state.
     // If you say "lock door", this should succeed if there is only 1 door in the room.
     // If there are multiple doors, you will need to specify which door by "east door" or "front door", etc.
+    //
+    // TODO: When you say "lock door" in the living room, it locks the bedroom door.
+    // This is a bug -- there are three doors in this room that can be locked.
+    // it looks like it chose the door with the lowest ID number. This is because the loop breaks
+    // when it finds the first door.
+    // Also TODO: When you say "lock the door", it segfaults. Probably something to do with
+    // passing the input to `std.mem.containsAtLeast`. Will need to parse the input better.
     pub fn lock(obj: CmdPayload) void {
         //var requires_key: bool = true;
         var doors_count: u4 = 0;
@@ -167,30 +174,41 @@ const Cmd = struct {
         const input = obj.input.?;
         print("Input is: {s}\n", .{input});
 
-        // Loop through the ports of the current room...
-        if (obj.player) |*p| {
-            for (p.*.room.ports) |*port| {
-                const port_type = @tagName(port.port_type);
-                if (!std.mem.containsAtLeast(u8, input, 1, port_type)) continue; // bail if not door
-                doors_count += 1;
-                // if it matches the exact name of the door, this is the target door.
-                if (std.mem.containsAtLeast(u8, port.name, 1, input)) {
-                    //target_door = @constCast(port);
-                    //@constCast(port).lock();
-                    port.lock();
-                }
-            }
-        } else unreachable;
+        //if (obj.player) |*p| {
 
-        // If there's more than one door and the target door could not be determined, then bail for now
+        var ports = obj.player.?.*.room.ports;
+
+        // Loop through the ports of the current room...
+        for (ports) |port_id| {
+            var port: *map.Port = &map.ports[port_id];
+            const port_type = @tagName(port.port_type);
+            if (!std.mem.containsAtLeast(u8, input, 1, port_type)) continue; // bail if not door
+            doors_count += 1;
+            // if it matches the exact name of the door, this is the target door.
+            if (std.mem.containsAtLeast(u8, port.name, 1, input)) {
+                target_door = port; // TODO: this works sometimes but not with multiple doors in a room.
+                //port.*.lock();
+                break;
+            }
+        }
+
+        print("Number of doors: {any}\n", .{doors_count});
+        print("Target door: {any}\n", .{target_door.*});
+
+        // TODO: test and clean this up
         if (doors_count > 1) {
             print("...But which door?\n", .{});
         } else if (doors_count == 0) {
             print("There aren't any doors in this room.", .{});
         } else if (doors_count == 1) {
             if (target_door != undefined) {
-                print("Locking the door...\n", .{});
-                //target_door.lock();
+                print("\nLocking the door...\n", .{});
+                target_door.lock();
+                const locked_state = switch (target_door.locked) {
+                    true => "locked",
+                    false => "unlocked",
+                };
+                print("The <{s}> is now <{s}>.\n", .{ target_door.name, locked_state });
             } else {
                 print("There is no target door! Huh??\n", .{});
             }

@@ -76,12 +76,9 @@ pub const Port = struct {
     locked: bool = false,
     door_side: ?DoorSide = null,
 
-    pub fn is_locked(self: Self) bool {
-        return self.locked;
-    }
     pub fn lock(self: *Self) void {
-        self.*.locked = true;
-        std.debug.print("hellooooooo", .{});
+        self.locked = true;
+        std.debug.print("You locked the <{s}>.\n", .{self.name});
     }
     pub fn unlock(self: *Self) void {
         self.locked = false;
@@ -96,19 +93,18 @@ pub const Port = struct {
 
 };
 
-// Also used for state management.
 pub const Room = struct {
     id: u8,
     name: []const u8,
     description: []const u8,
-    items: ?[*]Item,
+    items: ?[*]Item, // optional pointer to an unknown number of Items
     north: ?usize,
     east: ?usize,
     south: ?usize,
     west: ?usize,
     up: ?usize,
     down: ?usize,
-    ports: []const Port,
+    ports: []const usize, // pointer to an unknown number of immutable usizes
     //ports: ?[]u8, // Optional because some rooms need a port created (dig hole)
     //ports: [*]Port,
 
@@ -137,23 +133,18 @@ pub const Room = struct {
 };
 
 pub var ports = [_]Port{
-    Port{
-        .id = 0,
-        .port_sibling_id = 1,
-        .port_type = PortType.door,
-        .direction = Direction.south,
-        .description = "There is a door to your south.",
-        .from_room_id = 0,
-        .to_room_id = 1,
-    },
+    Port{ .id = 0, .name = "bedroom door", .port_sibling_id = 1, .port_type = PortType.door, .direction = Direction.south, .description = "There is a door to your south.", .from_room_id = 0, .to_room_id = 1, .lockable = true, .door_side = DoorSide.inside },
     Port{
         .id = 1,
+        .name = "bedroom door",
         .port_sibling_id = 0,
         .port_type = PortType.door,
         .direction = Direction.north,
         .description = "There is a door to your north.",
         .from_room_id = 1,
         .to_room_id = 0,
+        .lockable = true,
+        .door_side = DoorSide.outside,
     },
     Port{
         .id = 2,
@@ -179,6 +170,50 @@ pub var ports = [_]Port{
         .lockable = true,
         .door_side = DoorSide.inside,
     },
+    Port{
+        .id = 4,
+        .name = "front door",
+        .port_sibling_id = 5,
+        .port_type = PortType.door,
+        .direction = Direction.south,
+        .description = "The front door is to the south.",
+        .from_room_id = 1,
+        .to_room_id = 3,
+        .lockable = true,
+        .door_side = DoorSide.inside,
+    },
+    Port{
+        .id = 5,
+        .name = "front door",
+        .port_sibling_id = 4,
+        .port_type = PortType.door,
+        .direction = Direction.north,
+        .description = "This is the front door to your apartment.",
+        .from_room_id = 3,
+        .to_room_id = 1,
+        .lockable = true,
+        .door_side = DoorSide.outside,
+    },
+    Port{
+        .id = 6,
+        .name = "to the end",
+        .port_sibling_id = 7,
+        .port_type = PortType.opening,
+        .direction = Direction.south,
+        .description = "Continue this way to finish the game :)",
+        .from_room_id = 3,
+        .to_room_id = 4,
+    },
+    Port{
+        .id = 7,
+        .name = "to the apartment complex",
+        .port_sibling_id = 6,
+        .port_type = PortType.opening,
+        .direction = Direction.north,
+        .description = "This way leads to your apartment complex.",
+        .from_room_id = 4,
+        .to_room_id = 3,
+    },
 };
 
 pub var rooms = [_]Room{
@@ -193,19 +228,7 @@ pub var rooms = [_]Room{
         .west = null,
         .up = null,
         .down = null,
-        .ports = &[_]Port{
-            Port{
-                .id = 0,
-                .name = "bedroom door",
-                .description = "There is a door to your south that leads to the living room.",
-                .port_sibling_id = 1,
-                .port_type = PortType.door,
-                .direction = Direction.south,
-                .from_room_id = 0,
-                .to_room_id = 1,
-                .door_side = DoorSide.inside,
-            },
-        },
+        .ports = &[_]usize{0},
     },
     Room{ // 1
         .id = 1,
@@ -218,32 +241,7 @@ pub var rooms = [_]Room{
         .west = null,
         .up = null,
         .down = null,
-        .ports = &[_]Port{
-            Port{
-                .id = 1,
-                .name = "bedroom door",
-                .port_sibling_id = 0,
-                .port_type = PortType.door,
-                .direction = Direction.north,
-                .description = "There is a door to your north.",
-                .from_room_id = 1,
-                .to_room_id = 0,
-                .lockable = true,
-                .door_side = DoorSide.outside,
-            },
-            Port{
-                .id = 2,
-                .name = "bathroom door",
-                .port_sibling_id = 3,
-                .port_type = PortType.door,
-                .direction = Direction.east,
-                .description = "The bathroom door is to the east.",
-                .from_room_id = 1,
-                .to_room_id = 2,
-                .lockable = true,
-                .door_side = DoorSide.outside,
-            },
-        },
+        .ports = &[_]usize{ 1, 2, 4 },
     },
     Room{ // 2
         .id = 2,
@@ -256,22 +254,10 @@ pub var rooms = [_]Room{
         .west = 1, // connected to living room
         .up = null,
         .down = null,
-        .ports = &[_]Port{
-            Port{
-                .id = 3,
-                .name = "bathroom door",
-                .port_sibling_id = 2,
-                .port_type = PortType.door,
-                .direction = Direction.west,
-                .description = "You can exit the bathroom to the west.",
-                .from_room_id = 1,
-                .to_room_id = 2,
-                .lockable = true,
-                .door_side = DoorSide.inside,
-            },
-        },
+        .ports = &[_]usize{3},
     },
     Room{ // 3
+        .id = 3,
         .name = "your_apartment_entrance",
         .description = "Just outside of your apartment building.",
         .items = null,
@@ -281,18 +267,23 @@ pub var rooms = [_]Room{
         .west = null,
         .up = null,
         .down = null,
-        .ports = null,
+        .ports = &[_]usize{ 5, 6 },
     },
     Room{ // 4
+        .id = 4,
         .name = "the_end",
         .description = "You made it!",
         .items = null,
-        .north = null,
+        .north = 3,
         .east = null,
-        .south = 1,
+        .south = null,
         .west = null,
         .up = null,
         .down = null,
-        .ports = null,
+        .ports = &[_]usize{7},
     },
 };
+
+pub fn getPortById(id: usize) *Port {
+    return &ports[id];
+}
