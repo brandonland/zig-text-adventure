@@ -32,7 +32,6 @@ test "update by accessing array of structs first" {
     var x = &many[0];
     var y = &many[1];
 
-    // Unepected error
     try std.testing.expect(x.a == false and y.a == true);
 
     x.toggle();

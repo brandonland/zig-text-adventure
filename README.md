@@ -1,7 +1,8 @@
 # zig-text-adventure
-A text adventure written in Zig for obvious reasons
+A text adventure written in Zig for obvious reasons (I'm learning Zig).
+Story content is not in place yet — I am focusing on architecture and game logic first.
 
-### This is a work in progress.
+### This project is a work in progress and is under heavy development.
 
 ## Build
 Dependencies:

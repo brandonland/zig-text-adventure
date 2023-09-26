@@ -1,7 +1,9 @@
 const std = @import("std");
 const Item = @import("main.zig").Item;
 
-const Direction = enum { north, east, south, west };
+const print = std.debug.print;
+
+pub const Direction = enum { north, east, south, west, up, down };
 
 pub const Door = struct {
     // TODO: Lockable doors are different depending on which side of the door you are on.
@@ -72,7 +74,7 @@ pub const Port = struct {
     from_room_id: u8,
     to_room_id: u8,
     key: ?Item = null,
-    lockable: ?bool = null,
+    lockable: bool = true,
     locked: bool = false,
     door_side: ?DoorSide = null,
 
@@ -82,6 +84,15 @@ pub const Port = struct {
     }
     pub fn unlock(self: *Self) void {
         self.locked = false;
+    }
+    pub fn examine(self: Self) void {
+        if (self.lockable) {
+            const locked_state = switch (self.locked) {
+                true => "locked",
+                false => "unlocked",
+            };
+            print("{s}\nIt is currently {s}\n", .{ self.description, locked_state });
+        }
     }
 
     // Some ports will stay open once they were opened, e.g. shovel to dig.
