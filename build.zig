@@ -1,5 +1,15 @@
 const std = @import("std");
 
+const raylib = @import("raylib.zig/build.zig");
+
+//const zwin32 = @import("src/deps/zig-gamedev/libs/zwin32/build.zig");
+//const zgui = @import("libs/zgui/build.zig");
+
+// Needed for glfw/wgpu rendering backend
+//const zglfw = @import("libs/zglfw/build.zig");
+//const zgpu = @import("libs/zgpu/build.zig");
+//const zpool = @import("libs/zpool/build.zig");
+
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
@@ -16,13 +26,15 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
-        .name = "zig-text-adventure",
+        .name = "phantasmic-quest",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
     });
+
+    raylib.addTo(b, exe, target, optimize);
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
@@ -67,4 +79,28 @@ pub fn build(b: *std.Build) void {
     // running the unit tests.
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_unit_tests.step);
+
+    //
+    // zig-gamedev stuff
+    //
+    // Fetch the library
+
+    // Build it
+    //const zwin32_pkg = zwin32.package(b, target, optimize, .{});
+    //const zgui_pkg = zgui.package(b, target, optimize, .{
+    //    .options = .{ .backend = .glfw_wgpu },
+    //});
+
+    //zgui_pkg.link(exe);
+    ////zwin32_pkg.link(exe, .{ .d3d12 = true });
+
+    //// Needed for glfw/wgpu rendering backend
+    //const zglfw_pkg = zglfw.package(b, target, optimize, .{});
+    //const zpool_pkg = zpool.package(b, target, optimize, .{});
+    //const zgpu_pkg = zgpu.package(b, target, optimize, .{
+    //    .deps = .{ .zpool = zpool_pkg.zpool, .zglfw = zglfw_pkg.zglfw },
+    //});
+
+    //zglfw_pkg.link(exe);
+    //zgpu_pkg.link(exe);
 }

@@ -1,5 +1,10 @@
 const std = @import("std");
+
+// Local files
 const map = @import("map.zig");
+
+// Dependencies
+const raylib = @import("raylib");
 
 const print = std.debug.print;
 const eql = std.mem.eql;
@@ -238,14 +243,14 @@ const Cmd = struct {
                 while (input.*.peek() != null) {
                     // If this word matches the port *type*, add a point.
                     const word = input.*.peek().?;
-                    const direction = @tagName(port.direction);
+                    //const direction = @tagName(port.direction);
                     if (containsAtLeast(u8, word, 1, port_type)) {
-                        print("Adding a point to the {s} door.\n", .{direction});
+                        //print("Adding a point to the {s} door.\n", .{direction});
                         direction_points.* += 1;
                     }
                     // Add more points when each input word matches part of the port *name*.
                     if (containsAtLeast(u8, port.name, 1, word)) {
-                        print("Adding another point to the {s} door because it matches the port name.\n", .{direction});
+                        //print("Adding another point to the {s} door because it matches the port name.\n", .{direction});
                         direction_points.* += 1;
                     }
                     _ = input.*.next();
@@ -268,9 +273,9 @@ const Cmd = struct {
                 target_points.up,
                 target_points.down,
             };
-            //print("\n target_points.down is: {any}\n", .{target_points.down});
+            print("\n target_points.down is: {any}\n", .{target_points.down});
             const max = std.sort.max(u8, &port_points, {}, std.sort.asc(u8));
-            //print("max is {any}\n", .{max});
+            print("max is {any}\n", .{max});
             if (max == 0) {
                 print("Apparently, max is 0.\n", .{});
                 print("Sorry, but I don't know what you're trying to lock.\n", .{});
@@ -283,7 +288,7 @@ const Cmd = struct {
             var max_count: u4 = 0;
             var unique = true;
 
-            //print("\ntarget_points: {any}\n", .{target_points});
+            print("\ntarget_points: {any}\n", .{target_points});
 
             for (port_points, 0..) |p, i| {
                 _ = i;
@@ -293,7 +298,7 @@ const Cmd = struct {
                 }
             }
 
-            //print("max_count is {any}\n\n", .{max_count});
+            print("max_count is {any}\n\n", .{max_count});
 
             if (max_count > 1) unique = false;
 
@@ -338,14 +343,22 @@ const Cmd = struct {
             } else undefined;
         }
 
-        //print("Target door: {any}\n", .{target_door.*});
+        //print("Target door: {any}\n", .{target_door});
         if (target_door != undefined) {
             // for debugging purposes
-            var locked_state = switch (target_door.locked) {
+            var locked_state = switch (target_door.*.locked) {
                 true => "locked",
                 false => "unlocked",
             };
-            print("The <{s}> is now <{s}>.\n", .{ target_door.name, locked_state });
+            print("The <{s}> is currently <{s}>.\n", .{ target_door.name, locked_state });
+
+            if (target_door.locked) {
+                print("This door is already locked.\n", .{});
+                return;
+            }
+
+            // TODO: need logic to determine which side of the door you're facing.
+            // if you're on the outside, you will need a key.
 
             print("Locking door...\n", .{});
             target_door.lock();
@@ -357,7 +370,7 @@ const Cmd = struct {
             };
             print("The <{s}> is now <{s}>.\n", .{ target_door.name, locked_state });
         } else {
-            print("Something really horribly weird just happened.\n", .{});
+            print("Target door is undefined.", .{});
         }
     }
 

@@ -1,0 +1,6 @@
+[submodule "libs/zig-gamedev"]
+	path = libs/zig-gamedev
+	url = https://github.com/michal-z/zig-gamedev.git
+[submodule "raylib.zig"]
+	path = raylib.zig
+	url = https://github.com/ryupold/raylib.zig
