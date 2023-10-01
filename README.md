@@ -1,29 +1,15 @@
 # zig-text-adventure
-A text adventure written in Zig for obvious reasons (I'm learning Zig).
-Story content is not in place yet — I am focusing on architecture and game logic first.
+A text adventure written in Zig for obvious reasons (I'm learning Zig, I'm new to low-level/systems programming languages in general, and I'm new to game development). I'm just looking to explore new territory.
+The story content is not in place yet — I am focusing on architecture and game logic first. I am however writing a lot of notes for the story.
 
-### This project is a work in progress and is under heavy development.
+### **This project is now archived**. It will be rebuilt with [raylib](https://github.com/ryupold/raylib.zig) in mind.
+### I have decided it would be best to scrap the project, learn some raylib things, and have another go at it for a better 2nd pass.
 
 ## Build
 Dependencies:
-- [Zig](https://ziglang.org/download/)
+- [Zig 0.11](https://ziglang.org/download/)
 
 1. Clone this repo
 2. `cd` into it
 3. run `zig build run`
 4. That's it :)
-
-### To Do
-- [x] Add some basic commands that print to the screen
-- [x] Refactor code to use `StringHashMap` for commands
-- [x] Basic movement commands
-- [x] Door instances will "lock" when you say "lock door"
-    - While this is reflected in the code, there isn't any logic yet, e.g. for preventing the player
-    from walking through a locked door anyway.
-- [ ] Locked doors prevent you from walking through them.
-- [ ] Using a key item/object to unlock a door works
-- [ ] Player inventory 
-    - [ ] Can hold items
-    - [ ] Items can stack
-    - [ ] Can consume certain items
-        - [ ] Cooldown timer upon consuming 
